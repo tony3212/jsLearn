@@ -8,7 +8,7 @@ var Logger = {
         ERROR: 3
     },
 
-    level: 0,
+    level: 1,
 
     log: function (level, text, style) {
         if (level < this.level) {
@@ -22,6 +22,7 @@ var Logger = {
             });
         }
 
+        text = $('<div/>').text(text).html()
         template = '<li style="<%= style%>"><pre><%= content%></pre></li>'
 
         $("#main").append(_.template(template, {style: styleStr, content: text}));
@@ -108,12 +109,14 @@ $.extend(formulaObj, {
 
     /**
      * TODO
-     * @param formulaTree
+     * @param resolvingSymbolArray
      * @returns {*}
      * @private
      */
-    _getParentFormulaNode: function (formulaTree) {
-        return formulaTree[formulaTree.length - 1];
+    _getParentFormulaNode: function (resolvingSymbolArray) {
+        return _.size(resolvingSymbolArray) === 0
+            ? null :
+            resolvingSymbolArray[resolvingSymbolArray.length - 1].formulaNode;
     },
 
     /**
@@ -128,12 +131,13 @@ $.extend(formulaObj, {
 
     /**
      * 增加一个孩子节点
-     * @param {FormulaNode} formulaNode
+     * @param {FormulaNode} parentNode 父节点
+     * @param {FormulaNode} childNode 子节点
      * @private
      */
-    _addFormulaChild: function (formulaNode) {
-        formulaNode.children || (formulaNode.children = []);
-        formulaNode.children.push(formulaNode);
+    _addFormulaChild: function (parentNode, childNode) {
+        parentNode.children || (parentNode.children = []);
+        parentNode.children.push(childNode);
     },
 
     /**
@@ -180,7 +184,7 @@ $.extend(formulaObj, {
             TERMINATOR: "}"
         },
 
-        // 【常用字】（其它）起始、结束符
+        // 【常用字(其它)】起始、结束符
         COMMON_WORD: {
             STARTER: "#",
             TERMINATOR: "#"
@@ -192,19 +196,19 @@ $.extend(formulaObj, {
             TERMINATOR: ">"
         },
 
-        // 【求和】起始、结束符
+        // 【求和(SUM)】起始、结束符
         SUM: {
             STARTER: "SUM(",
             TERMINATOR: ")"
         },
 
-        // 【求和】起始、结束符
+        // 【条件(IF)】起始、结束符
         IF: {
             STARTER: "IF#",
             TERMINATOR: "#IF"
         },
 
-        // 【求和】起始、结束符
+        // 【组(Group)】起始、结束符
         GROUP: {
             STARTER: "(",
             TERMINATOR: ")"
@@ -328,17 +332,24 @@ $.extend(formulaObj, {
      * @private
      */
     _findTerminator: function (matchingText) {
-        var result = null;
+        var matchResult, result = null;
 
         this._forEachSymbol(function (key, mark) {
             var index = String(matchingText).indexOf(mark.TERMINATOR);
 
             if (index >= 0) {
-                result = {
+                matchResult = {
                     symbol: $.extend(true, {}, _.object([key], [mark])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
-                return false;
+
+                if (result == null) {
+                    result = matchResult;
+                } else if ($.isPlainObject(result)) {
+                    result = [result, matchResult];
+                } else {
+                    result.push(matchResult);
+                }
             }
         });
         return result;
@@ -385,30 +396,42 @@ $.extend(formulaObj, {
             formulaTree = [];
 
         Logger.seperate("");
-        Logger.info("formula is :" + formula, {
+        Logger.info("formula is: " + formula, {
             "color": "blue",
             "padding": "10px 10px"
         });
 
-        var startTerminalSame = false, operateResult,
+        var lastResolvingIndex, startTerminalSame = false, operateResult,
             starterResult, starterSymbol, starterSymbolValue,
             terminatorResult, terminatorSymbol, terminatorSymbolValue,
-            parentFormulaNode, emptyFormulaNode, updatingNode,
+            parentFormulaNode, updatingNode, emptyFormulaNode, emptyTextNode,
             starterInfo, terminatorInfo;
 
+        lastResolvingIndex = -1;
         for (var i = 0, length = formula.length; i < length; i++) {
             matchingText += formula[i];
             Logger.trace(matchingText);
 
-            // 1.操作符
+            // 1.匹配操作符
             operateResult = self._findOperator(matchingText);
             if (operateResult != null) {
                 Logger.info("operateResult: " + JSON.stringify(operateResult));
-                if (operateResult.beforeContext !== "") {
-                    formulaTree.push(self._createTextFormulaNode(operateResult.beforeContext));
+                emptyTextNode = operateResult.beforeContext !== ""
+                    ? self._createTextFormulaNode(operateResult.beforeContext)
+                    : null;
+                emptyFormulaNode = self._createOperatorFormulaNode(operateResult.symbol);
+                parentFormulaNode = self._getParentFormulaNode(resolvingSymbolArray);
+                if (parentFormulaNode == null) {
+                    emptyTextNode && formulaTree.push(emptyTextNode);
+                    formulaTree.push(emptyFormulaNode);
+                } else {
+                    emptyTextNode && self._addFormulaChild(parentFormulaNode, emptyTextNode);
+                    self._addFormulaChild(parentFormulaNode, emptyFormulaNode);
                 }
-                formulaTree.push(self._createOperatorFormulaNode(operateResult.symbol));
+                formulaTree.push();
+                Logger.trace("匹配操作符：" + JSON.stringify(formulaTree));
                 matchingText = "";
+                lastResolvingIndex = i;
                 continue;
             }
 
@@ -417,31 +440,34 @@ $.extend(formulaObj, {
             if (starterResult != null && !startTerminalSame) {
                 Logger.info("starterResult: " + JSON.stringify(starterResult));
 
-                // 2.1增加普通文本节点
-                if (starterResult.beforeContext !== "") {
-                    formulaTree.push(self._createTextFormulaNode(starterResult.beforeContext));
-                }
-
-                // 2.2增加公式元素节点
-                emptyFormulaNode = self._createEmptyFormulaNode();
-                if (_.size(resolvingSymbolArray) === 0) {
-                    formulaTree.push(emptyFormulaNode);
-                } else {
-                    parentFormulaNode = self._getParentFormulaNode(formulaTree);
-                    self._addFormulaChild(parentFormulaNode);
-                }
-
-
+                // 2.1增加元素节点
                 starterSymbol = starterResult.symbol;
                 starterSymbolValue = self._getSymbolValue(starterSymbol);
                 // 启起符与结束符如果相同，则标记一下，以区分下次出现该符号时不当作起始符对待
                 starterSymbolValue.STARTER === starterSymbolValue.TERMINATOR && (startTerminalSame = true);
 
+                emptyFormulaNode = self._createEmptyFormulaNode();
+                // 2.2增加普通文本节点
+                emptyTextNode = starterResult.beforeContext !== ""
+                    ? self._createTextFormulaNode(starterResult.beforeContext)
+                    : null;
+                parentFormulaNode = self._getParentFormulaNode(resolvingSymbolArray);
+                if (parentFormulaNode == null) {
+                    emptyTextNode && formulaTree.push(emptyTextNode);
+                    formulaTree.push(emptyFormulaNode);
+                } else {
+                    emptyTextNode && self._addFormulaChild(parentFormulaNode, emptyTextNode);
+                    self._addFormulaChild(parentFormulaNode, emptyFormulaNode);
+                }
+
                 resolvingSymbolArray.push({
                     index: i - starterSymbolValue.STARTER.length + 1,
                     symbol: starterSymbol,
-                    symbolName: self._getSymbolName(starterSymbol)
+                    symbolName: self._getSymbolName(starterSymbol),
+                    parentFormulaNode: parentFormulaNode,
+                    formulaNode: emptyFormulaNode
                 });
+                Logger.trace("匹配起始符："+ JSON.stringify(formulaTree));
                 matchingText = "";
                 continue;
             }
@@ -450,9 +476,14 @@ $.extend(formulaObj, {
             terminatorResult = self._findTerminator(matchingText);
             if (terminatorResult != null) {
                 Logger.info("terminatorResult: " + JSON.stringify(terminatorResult));
+                starterInfo = resolvingSymbolArray.pop();
+                if ($.isArray(terminatorResult)) {
+                    terminatorResult = _.find(terminatorResult, function (termResult) {
+                        return starterInfo.symbolName === self._getSymbolName(termResult.symbol);
+                    });
+                }
                 terminatorSymbol = terminatorResult.symbol;
                 terminatorSymbolValue = self._getSymbolValue(terminatorSymbol);
-                starterInfo = resolvingSymbolArray.pop();
                 if (starterResult === undefined) {
                     Logger.error("报表公式不正确");
                     throw new Error("报表公式不正确");
@@ -461,28 +492,92 @@ $.extend(formulaObj, {
                     Logger.error("报表公式不正确");
                     throw new Error("报表公式不正确");
                 }
-                updatingNode = self._getLastFormulaNode(formulaTree);
+                updatingNode = starterInfo.formulaNode;
                 terminatorInfo = {
                     index: i,
                     symbol: terminatorSymbol,
                     symbolName: self._getSymbolName(terminatorSymbol)
                 }
+
+                emptyTextNode = terminatorResult.beforeContext !== ""
+                    ? self._createTextFormulaNode(terminatorResult.beforeContext)
+                    : null;
+                parentFormulaNode = starterInfo.formulaNode;
+                if (parentFormulaNode == null) {
+                    emptyTextNode && formulaTree.push(emptyTextNode);
+                } else {
+                    emptyTextNode && self._addFormulaChild(parentFormulaNode, emptyTextNode);
+                }
+
                 // 更新节点
                 self._updateNode(updatingNode, starterInfo, terminatorInfo, formula);
 
                 terminatorSymbolValue.STARTER === terminatorSymbolValue.TERMINATOR && (startTerminalSame = false);
                 matchingText = "";
+                lastResolvingIndex = i;
             }
         }
-        Logger.warn("formulaObject:" + JSON.stringify(formulaTree, null, "\t"));
+        if (lastResolvingIndex < formula.length - 1) {
+            formulaTree.push(self._createTextFormulaNode(formula.substring(lastResolvingIndex + 1)));
+        }
+
+        if (_.size(resolvingSymbolArray) > 0) {
+            Logger.error("报表公式有误：" + formulaTree);
+        }
+        Logger.warn("resolve result:" + JSON.stringify(formulaTree, null, "\t"));
         Logger.seperate("");
     }
 });
 
 formulaObj.init();
-formulaObj.resolve(" abc3#corpName#");
-formulaObj.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
+// formulaObj.resolve(" abc3#corpName#");
+// formulaObj.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
 // formulaObj.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-// formulaObj.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+formulaObj.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
 // formulaObj.resolve("{13_01!<C41>}");
-// formulaObj.resolve("SUM(<C1>:<C2>)");
+/*
+
+//<editor-fold desc="1.测试单个公式">
+// 1.1.测试普通文本
+Logger.info("1.1.测试普通文本");
+formulaObj.resolve("abc");
+
+// 1.2.测试【会计科目】公式
+Logger.info("1.2.测试【会计科目】公式");
+formulaObj.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
+
+// 1.3.测试【表间取值】公式
+Logger.info("1.3.测试【表间取值】公式");
+formulaObj.resolve("{FSTM_JS0102!<B3>}");
+
+// 1.4.测试【常用字(其它)】公式
+Logger.info("1.4.测试【常用字(其它)】公式");
+formulaObj.resolve("#queryTIN#");
+
+// 1.5.测试 【单元格】公式
+Logger.info("1.5.测试 【单元格】公式");
+formulaObj.resolve("<C3>");
+
+// 1.6.测试 【求和(SUM)】公式
+Logger.info(" 1.6.测试 【求和(SUM)】公式");
+formulaObj.resolve("SUM(<C1>:<C2>)");
+
+// 1.7.测试 【条件(IF)】公式
+
+// 1.8.测试 【组(Group)】公式
+Logger.info(" 1.8.测试 【组(Group)】公式");
+formulaObj.resolve("(1+2)");
+
+//</editor-fold>
+*/
+
+/*
+//<editor-fold desc="2.测试组和公式">
+// 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
+
+// 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
+
+// 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
+
+//</editor-fold>
+*/
