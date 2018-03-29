@@ -1,5 +1,3 @@
-var formulaObj = formulaObj || {};
-
 var Logger = {
     LEVEL: {
         TRACE: 0,
@@ -44,25 +42,31 @@ var Logger = {
         this.log(this.LEVEL.ERROR, text, {color: "red", "font-weight": "bold"});
     },
 
-    seperate: function (text) {
+    separate: function (text) {
         var fix = "=========================================================";
         this.log(this.LEVEL.WARN, fix + (text || "") + fix, {color: "#FFEF8F"});
     }
 }
 
+
+var formulaResolver = formulaResolver || {};
+
 /**
- * @typedef {object} FormulaNode 公式节点
+ * @typedef {Object} FormulaNode 公式节点
  * @property {string} type 节点类型
  * @property {string} formula 公式
- * @property {object} formulaObject 公式对应的对象
+ * @property {Object} formulaVo 公式对应的对象
  * @property {?(null | [FormulaNode])} children 孩子节点
  *
- * @typedef {object} Symbol 公式元素
+ * @typedef {Object} SymbolValue 公式元素值
  * @property {string} STARTER 起始符
  * @property {string} TERMINATOR 结束符
+ * @property {boolean} LEAF 是否基本公式
+ *
+ * @typedef {Object.<string, SymbolValue>} Symbol 公式元素
  */
 
-$.extend(formulaObj, {
+$.extend(formulaResolver, {
     /**
      * 创建文本节点
      * @param text 普通文本
@@ -73,7 +77,7 @@ $.extend(formulaObj, {
         return {
             type: "TEXT",
             formula: text,
-            formulaObject: text,
+            formulaVo: text,
             children: null
         };
     },
@@ -87,7 +91,7 @@ $.extend(formulaObj, {
         return {
             type: null,
             formula: null,
-            formulaObject: null,
+            formulaVo: null,
             children: null
         };
     },
@@ -102,7 +106,7 @@ $.extend(formulaObj, {
         return {
             type: "OPERATOR",
             formula: this._getSymbolValue(operator),
-            formulaObject: null,
+            formulaVo: null,
             children: null
         };
     },
@@ -159,7 +163,7 @@ $.extend(formulaObj, {
     }
 });
 
-$.extend(formulaObj, {
+$.extend(formulaResolver, {
     /** 初始化是否完成 */
     initialComplete: false,
 
@@ -175,43 +179,50 @@ $.extend(formulaObj, {
         // 【会计科目】起始、结束符
         SUBJECT: {
             STARTER: "[K",
-            TERMINATOR: "]"
+            TERMINATOR: "]",
+            LEAF: true
         },
 
         // 【表间取值】起始、结束符
         M_SHEET: {
             STARTER: "{",
-            TERMINATOR: "}"
+            TERMINATOR: "}",
+            LEAF: true,
         },
 
         // 【常用字(其它)】起始、结束符
         COMMON_WORD: {
             STARTER: "#",
-            TERMINATOR: "#"
+            TERMINATOR: "#",
+            LEAF: true
         },
 
         // 【单元格】起始、结束符
         SHEET: {
             STARTER: "<",
-            TERMINATOR: ">"
+            TERMINATOR: ">",
+            LEAF: true
         },
 
         // 【求和(SUM)】起始、结束符
         SUM: {
             STARTER: "SUM(",
-            TERMINATOR: ")"
+            TERMINATOR: ")",
+            LEAF: true
         },
 
         // 【条件(IF)】起始、结束符
         IF: {
             STARTER: "IF#",
-            TERMINATOR: "#IF"
+            TERMINATOR: "#IF",
+            LEAF: false
         },
 
         // 【组(Group)】起始、结束符
         GROUP: {
             STARTER: "(",
-            TERMINATOR: ")"
+            TERMINATOR: ")",
+            LEAF: false
         }
     },
 
@@ -250,7 +261,7 @@ $.extend(formulaObj, {
      * 在给定的文件中查找启起符结果
      *
      * @param matchingText
-     * @typedef {object} SearchMapping
+     * @typedef {Object} SearchMapping
      * @property {Symbol} symbol
      * @property {string} beforeContext
      *
@@ -271,7 +282,7 @@ $.extend(formulaObj, {
 
             if (index >= 0) {
                 result = {
-                    symbol: $.extend(true, {}, _.object([key], [operator])),
+                    symbol: $.extend(true, {}, _.Object([key], [operator])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
                 return false;
@@ -284,7 +295,7 @@ $.extend(formulaObj, {
      * 在给定的文件中查找启起符结果
      *
      * @param matchingText
-     * @typedef {object} SearchMapping
+     * @typedef {Object} SearchMapping
      * @property {Symbol} symbol
      * @property {string} beforeContext
      *
@@ -305,7 +316,7 @@ $.extend(formulaObj, {
 
             if (index >= 0) {
                 result = {
-                    symbol: $.extend(true, {}, _.object([key], [mark])),
+                    symbol: $.extend(true, {}, _.Object([key], [mark])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
                 return false;
@@ -317,8 +328,10 @@ $.extend(formulaObj, {
     /**
      * 在给定的文件中查找启起符结果
      *
-     * @param matchingText
-     * @typedef {object} SearchMapping
+     * @param {string} matchingText
+     * @param {Symbol} symbol
+     *
+     * @typedef {Object} SearchMapping
      * @property {Symbol} symbol
      * @property {string} beforeContext
      *
@@ -331,15 +344,27 @@ $.extend(formulaObj, {
      *
      * @private
      */
-    _findTerminator: function (matchingText) {
-        var matchResult, result = null;
+    _findTerminator: function (matchingText, symbol) {
+        var self = this, matchResult, index, result = null;
 
-        this._forEachSymbol(function (key, mark) {
-            var index = String(matchingText).indexOf(mark.TERMINATOR);
+
+        // 如果有传symbol时,直接返回匹配结果
+        if (symbol) {
+            index = String(matchingText).indexOf(self._getSymbolValue(symbol).TERMINATOR)
+            return index >= 0
+                ? {
+                    symbol: $.extend(true, {}, symbol),
+                    beforeContext: String(matchingText).substring(0, index)
+                }
+                : null;
+        }
+
+        self._forEachSymbol(function (symbolName, symbolValue) {
+            index = String(matchingText).indexOf(symbolValue.TERMINATOR);
 
             if (index >= 0) {
                 matchResult = {
-                    symbol: $.extend(true, {}, _.object([key], [mark])),
+                    symbol: $.extend(true, {}, _.Object([symbolName], [symbolValue])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
 
@@ -386,7 +411,7 @@ $.extend(formulaObj, {
 
     /**
      * 解析公式
-     * @typedef {object} resoleVo 解析vo
+     * @typedef {Object} resoleVo 解析vo
      * @property {number} index 顺号
      * @property {string} mark 标记
      *
@@ -395,14 +420,15 @@ $.extend(formulaObj, {
         var self = this, resolvingSymbolArray = [], matchingText = "",
             formulaTree = [];
 
-        Logger.seperate("");
+        Logger.separate("");
         Logger.info("formula is: " + formula, {
             "color": "blue",
             "padding": "10px 10px"
         });
 
-        var lastResolvingIndex, startTerminalSame = false, operateResult,
-            starterResult, starterSymbol, starterSymbolValue,
+        var lastResolvingIndex, startTerminalSame = false, resolvingLeaf = false,
+            operateResult,
+            starterResult, starterSymbol, starterSymbolValue, starterSymbolName,
             terminatorResult, terminatorSymbol, terminatorSymbolValue,
             parentFormulaNode, updatingNode, emptyFormulaNode, emptyTextNode,
             starterInfo, terminatorInfo;
@@ -437,7 +463,7 @@ $.extend(formulaObj, {
 
             // 2.匹配起始符
             starterResult = self._findStarter(matchingText);
-            if (starterResult != null && !startTerminalSame) {
+            if (starterResult != null && !startTerminalSame && !resolvingLeaf) {
                 Logger.info("starterResult: " + JSON.stringify(starterResult));
 
                 // 2.1增加元素节点
@@ -467,19 +493,26 @@ $.extend(formulaObj, {
                     parentFormulaNode: parentFormulaNode,
                     formulaNode: emptyFormulaNode
                 });
-                Logger.trace("匹配起始符："+ JSON.stringify(formulaTree));
+
+                starterSymbolValue.LEAF && (resolvingLeaf = true);
                 matchingText = "";
+                Logger.trace("匹配起始符："+ JSON.stringify(formulaTree));
                 continue;
             }
 
             // 3.匹配结束符
-            terminatorResult = self._findTerminator(matchingText);
+            terminatorResult = self._findTerminator(
+                matchingText,
+                resolvingLeaf ? _.last(resolvingSymbolArray).symbol : null
+            );
             if (terminatorResult != null) {
                 Logger.info("terminatorResult: " + JSON.stringify(terminatorResult));
+
                 starterInfo = resolvingSymbolArray.pop();
+                starterSymbolName = starterInfo.symbolName;
                 if ($.isArray(terminatorResult)) {
                     terminatorResult = _.find(terminatorResult, function (termResult) {
-                        return starterInfo.symbolName === self._getSymbolName(termResult.symbol);
+                        return  starterSymbolName === self._getSymbolName(termResult.symbol);
                     });
                 }
                 terminatorSymbol = terminatorResult.symbol;
@@ -488,7 +521,7 @@ $.extend(formulaObj, {
                     Logger.error("报表公式不正确");
                     throw new Error("报表公式不正确");
                 }
-                if (self._getSymbolName(starterInfo.symbol) !== self._getSymbolName(terminatorSymbol)) {
+                if (starterSymbolName !== self._getSymbolName(terminatorSymbol)) {
                     Logger.error("报表公式不正确");
                     throw new Error("报表公式不正确");
                 }
@@ -499,7 +532,7 @@ $.extend(formulaObj, {
                     symbolName: self._getSymbolName(terminatorSymbol)
                 }
 
-                emptyTextNode = terminatorResult.beforeContext !== ""
+                emptyTextNode = !resolvingLeaf && terminatorResult.beforeContext !== ""
                     ? self._createTextFormulaNode(terminatorResult.beforeContext)
                     : null;
                 parentFormulaNode = starterInfo.formulaNode;
@@ -514,6 +547,7 @@ $.extend(formulaObj, {
 
                 terminatorSymbolValue.STARTER === terminatorSymbolValue.TERMINATOR && (startTerminalSame = false);
                 matchingText = "";
+                resolvingLeaf = false;
                 lastResolvingIndex = i;
             }
         }
@@ -525,59 +559,66 @@ $.extend(formulaObj, {
             Logger.error("报表公式有误：" + formulaTree);
         }
         Logger.warn("resolve result:" + JSON.stringify(formulaTree, null, "\t"));
-        Logger.seperate("");
+        Logger.separate("");
     }
 });
 
-formulaObj.init();
-// formulaObj.resolve(" abc3#corpName#");
-// formulaObj.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
-// formulaObj.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-formulaObj.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-// formulaObj.resolve("{13_01!<C41>}");
-/*
 
-//<editor-fold desc="1.测试单个公式">
-// 1.1.测试普通文本
-Logger.info("1.1.测试普通文本");
-formulaObj.resolve("abc");
 
-// 1.2.测试【会计科目】公式
-Logger.info("1.2.测试【会计科目】公式");
-formulaObj.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
 
-// 1.3.测试【表间取值】公式
-Logger.info("1.3.测试【表间取值】公式");
-formulaObj.resolve("{FSTM_JS0102!<B3>}");
+// 测试
+(function () {
+    formulaResolver.init();
+// formulaResolver.resolve(" abc3#corpName#");
+// formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
+// formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+//     formulaResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+// formulaResolver.resolve("{13_01!<C41>}");
 
-// 1.4.测试【常用字(其它)】公式
-Logger.info("1.4.测试【常用字(其它)】公式");
-formulaObj.resolve("#queryTIN#");
+    //<editor-fold desc="1.测试单个公式">
+    // 1.1.测试普通文本
+//     Logger.info("1.1.测试普通文本");
+//     formulaResolver.resolve("abc");
 
-// 1.5.测试 【单元格】公式
-Logger.info("1.5.测试 【单元格】公式");
-formulaObj.resolve("<C3>");
+    // 1.2.测试【会计科目】公式
+//     Logger.info("1.2.测试【会计科目】公式");
+//     formulaResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
 
-// 1.6.测试 【求和(SUM)】公式
-Logger.info(" 1.6.测试 【求和(SUM)】公式");
-formulaObj.resolve("SUM(<C1>:<C2>)");
+    // 1.3.测试【表间取值】公式
+    Logger.info("1.3.测试【表间取值】公式");
+    formulaResolver.resolve("{FSTM_JS0102!<B3>}");
 
-// 1.7.测试 【条件(IF)】公式
+    // 1.4.测试【常用字(其它)】公式
+    Logger.info("1.4.测试【常用字(其它)】公式");
+    formulaResolver.resolve("#queryTIN#");
 
-// 1.8.测试 【组(Group)】公式
-Logger.info(" 1.8.测试 【组(Group)】公式");
-formulaObj.resolve("(1+2)");
+    // 1.5.测试 【单元格】公式
+    Logger.info("1.5.测试 【单元格】公式");
+    formulaResolver.resolve("<C3>");
 
-//</editor-fold>
-*/
+    // 1.6.测试 【求和(SUM)】公式
+    Logger.info(" 1.6.测试 【求和(SUM)】公式");
+    formulaResolver.resolve("SUM(<C1>:<C2>)");
 
-/*
-//<editor-fold desc="2.测试组和公式">
-// 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
+    // 1.7.测试 【条件(IF)】公式
 
-// 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
+    // 1.8.测试 【组(Group)】公式
+    Logger.info(" 1.8.测试 【组(Group)】公式");
+    formulaResolver.resolve("(1+2)");
 
-// 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
+    //</editor-fold>
 
-//</editor-fold>
-*/
+    //<editor-fold desc="2.测试组和公式">
+    // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
+    Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
+    formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
+
+    /*
+    // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
+
+    // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
+
+    //</editor-fold>
+    */
+})(formulaResolver);
+
