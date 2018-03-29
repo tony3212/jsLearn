@@ -124,16 +124,6 @@ $.extend(formulaResolver, {
     },
 
     /**
-     * TODO
-     * @param formulaTree
-     * @returns {*}
-     * @private
-     */
-    _getLastFormulaNode: function (formulaTree) {
-        return formulaTree[formulaTree.length - 1];
-    },
-
-    /**
      * 增加一个孩子节点
      * @param {FormulaNode} parentNode 父节点
      * @param {FormulaNode} childNode 子节点
@@ -226,28 +216,6 @@ $.extend(formulaResolver, {
         }
     },
 
-    CONST_LIST: {
-        STARTER: [],
-        TERMINATOR: [],
-        OPERATOR: [],
-    },
-
-    /** 是否为操作符 */
-    _isOperator: function (text) {
-        return _.contains(this.CONST_LIST.OPERATOR, text);
-    },
-
-    /** 是否为起始符 */
-    _isStarter: function (text) {
-        return _.contains(this.CONST_LIST.STARTER, text);
-    },
-
-    /** 是否为结束符 */
-    _isTerminator: function (text) {
-        return _.contains(this.CONST_LIST.TERMINATOR, text);
-
-    },
-
     /**
      * 遍历公式元素
      * @param {function} callback 回调函数
@@ -282,7 +250,7 @@ $.extend(formulaResolver, {
 
             if (index >= 0) {
                 result = {
-                    symbol: $.extend(true, {}, _.Object([key], [operator])),
+                    symbol: $.extend(true, {}, _.object([key], [operator])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
                 return false;
@@ -316,7 +284,7 @@ $.extend(formulaResolver, {
 
             if (index >= 0) {
                 result = {
-                    symbol: $.extend(true, {}, _.Object([key], [mark])),
+                    symbol: $.extend(true, {}, _.object([key], [mark])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
                 return false;
@@ -364,7 +332,7 @@ $.extend(formulaResolver, {
 
             if (index >= 0) {
                 matchResult = {
-                    symbol: $.extend(true, {}, _.Object([symbolName], [symbolValue])),
+                    symbol: $.extend(true, {}, _.object([symbolName], [symbolValue])),
                     beforeContext: String(matchingText).substring(0, index)
                 };
 
@@ -386,27 +354,6 @@ $.extend(formulaResolver, {
 
     _getSymbolValue: function (symbol) {
         return symbol != null ? _.values(symbol)[0] : null;
-    },
-
-    /** 初始化 */
-    init: function () {
-        var self = this, symbol = self.SYMBOL, operator = self.OPERATOR, constList = self.CONST_LIST;
-
-        if (self.initialComplete) {
-            return;
-        }
-
-        $.each(symbol, function (index, mark) {
-            mark.STARTER && constList.STARTER.push(mark.STARTER);
-            mark.TERMINATOR && constList.TERMINATOR.push(mark.TERMINATOR);
-        });
-
-        $.each(operator, function (index, oper) {
-            constList.OPERATOR.push(oper);
-        });
-        Logger.trace("constList STARTER：" + constList.STARTER);
-        Logger.trace("constList TERMINATOR：" + constList.TERMINATOR);
-        Logger.trace("constList OPERATOR：" + constList.OPERATOR);
     },
 
     /**
@@ -496,7 +443,7 @@ $.extend(formulaResolver, {
 
                 starterSymbolValue.LEAF && (resolvingLeaf = true);
                 matchingText = "";
-                Logger.trace("匹配起始符："+ JSON.stringify(formulaTree));
+                Logger.trace("匹配起始符：" + JSON.stringify(formulaTree));
                 continue;
             }
 
@@ -512,7 +459,7 @@ $.extend(formulaResolver, {
                 starterSymbolName = starterInfo.symbolName;
                 if ($.isArray(terminatorResult)) {
                     terminatorResult = _.find(terminatorResult, function (termResult) {
-                        return  starterSymbolName === self._getSymbolName(termResult.symbol);
+                        return starterSymbolName === self._getSymbolName(termResult.symbol);
                     });
                 }
                 terminatorSymbol = terminatorResult.symbol;
@@ -564,11 +511,8 @@ $.extend(formulaResolver, {
 });
 
 
-
-
 // 测试
 (function () {
-    formulaResolver.init();
 // formulaResolver.resolve(" abc3#corpName#");
 // formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
 // formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
