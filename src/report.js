@@ -86,6 +86,16 @@ var ISymbolResolver = ISymbolResolver || {
      */
     convert2Formula: function (formulaVo) {
         return null;
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        return "";
     }
 };
 
@@ -121,6 +131,21 @@ var textResolver = $.extend(true, {}, ISymbolResolver, {
      */
     convert2Formula: function (formulaVo) {
         return formulaVo.text
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        if ($.trim(formulaVo.text) === "") {
+            return "";
+        }
+
+        template || (template = '<span class="formula formula_text"><%= text%></span>');
+        return String(_.template(template, formulaVo));
     }
 });
 
@@ -393,6 +418,22 @@ var subjectResolver = $.extend(true, {}, ISymbolResolver, {
     },
 
     /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        var defaultTemplate = '';
+
+        defaultTemplate += '<span class="formula formula_subject">';
+        defaultTemplate += '    K(<%= subjectCodeList %>|<%= reClassify %>|<%= valueTypeCode %>|<%= reClassify %>)';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, formulaVo));
+    },
+
+    /**
      * 将科目编码转成字符串的形式
      * e.g. subjectCodeList = [1001,1002] => 1001,1002,
      */
@@ -528,6 +569,22 @@ var mSheetResolver = $.extend(true, {}, ISymbolResolver, {
             return _.template("{<%= reportCode %>!<<%= position %>>}", formulaVo);
         }
         return null;
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        var defaultTemplate = '';
+
+        defaultTemplate += '<span class="formula formula_msheet">';
+        defaultTemplate += '    <%= reportCode %>!<%= position %>';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, formulaVo));
     }
 });
 
@@ -598,11 +655,27 @@ var commonWorldResolver = $.extend(true, {}, ISymbolResolver, {
             return _.template("#<%= name %>#", formulaVo);
         }
         return null;
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        var defaultTemplate = '';
+
+        defaultTemplate += '<span class="formula formula_commonworld">';
+        defaultTemplate += '    <%= label %>';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, formulaVo));
     }
 });
 
 /**
- * 【常用字(其它)】解析器
+ * 【单元格】解析器
  * @implements {ISymbolResolver}
  */
 var sheetResolver = $.extend(true, {}, ISymbolResolver, {
@@ -643,6 +716,22 @@ var sheetResolver = $.extend(true, {}, ISymbolResolver, {
             return _.template("<<%= position %>>", formulaVo);
         }
         return null;
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        var defaultTemplate = '';
+
+        defaultTemplate += '<span class="formula formula_sheet">';
+        defaultTemplate += '    <%= position %>';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, formulaVo));
     }
 });
 
@@ -688,6 +777,22 @@ var sumResolver = $.extend(true, {}, ISymbolResolver, {
             return _.template("SUM(<<%= startPosition %>>:<<%= endPosition %>>", formulaVo);
         }
         return null;
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+        var defaultTemplate = '';
+
+        defaultTemplate += '<span class="formula formula_sum">';
+        defaultTemplate += '    SUM(<%= startPosition %>:<%= endPosition %>)';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, formulaVo));
     }
 });
 //</editor-fold>
@@ -1043,7 +1148,7 @@ $.extend(formulaTreeResolver, {
      * @typedef {Object} resoleVo 解析vo
      * @property {number} index 顺号
      * @property {string} mark 标记
-     *
+     * @returns {[FormulaNode]} 公式节点树
      */
     resolve: function (formula) {
         var self = this, resolvingSymbolArray = [], matchingText = "",
@@ -1186,6 +1291,32 @@ $.extend(formulaTreeResolver, {
         }
         Logger.warn("resolve result:" + JSON.stringify(formulaTree, null, "\t"));
         Logger.separate("");
+
+        return formulaTree;
+    },
+
+    /**
+     * 获得渲染的html代码
+     * @param formulaTree
+     */
+    renderHtml: function (formulaTree) {
+        var self = this, html = "", resolver;
+
+        $.each(formulaTree, function (index, formulaNode) {
+            var type = formulaNode.type;
+
+            if (_.size(formulaNode.children) === 0) {
+                resolver = self._getSymbolResolver(type);
+                if (resolver) {
+                    html += resolver.convert2Html(formulaNode.formulaVo)
+                } else if (type === "OPERATOR") {
+                    html += _.template('<span class="formula formula_operator"><%= text%></span>', {text: formulaNode.formula});
+                }
+            } else {
+                html += "<span>" + self.renderHtml(formulaNode.children) + "</span>"
+            }
+        });
+        return html;
     }
 });
 
@@ -1193,194 +1324,264 @@ $.extend(formulaTreeResolver, {
 // 测试
 (function () {
 
-/*
     //<editor-fold desc="测试解析器">
+    /*
+            // =================================================================================
+            Logger.separate();
+            Logger.info("1.测试【普通文本】解析器");
+            Logger.separate();
+            // 1.1测试convert2Vo方法
+            Logger.caption("1.1 测试 textResolver.convert2Vo(textFormula)");
+            var textFormula = "abc";
+            Logger.info("textFormula is: " + textFormula);
+            Logger.warn("result is: " + JSON.stringify(textResolver.convert2Vo(textFormula), null, "\t"));
 
-    // =================================================================================
-    Logger.separate();
-    Logger.info("1.测试【普通文本】解析器");
-    Logger.separate();
-    // 1.1测试convert2Vo方法
-    Logger.caption("1.1 测试 textResolver.convert2Vo(textFormula)");
-    var textFormula = "abc";
-    Logger.info("textFormula is: " + textFormula);
-    Logger.warn("result is: " + JSON.stringify(textResolver.convert2Vo(textFormula), null, "\t"));
+            Logger.separate();
 
-    Logger.separate();
+               // 1.2测试convert2Vo方法
+               Logger.caption("1.2 测试 textResolver.convert2Formula(textFormulaVo)");
+               var textFormulaVo = {
+                   "text": "abc"
+               };
+               Logger.info("textFormulaVo is: " + JSON.stringify(textFormulaVo, null, "\t"));
+               Logger.warn("result is: " + textResolver.convert2Formula(textFormulaVo), null, "\t");
 
-    // 1.2测试convert2Vo方法
-    Logger.caption("1.2 测试 textResolver.convert2Formula(textFormulaVo)");
-    var textFormulaVo = {
-        "text": "abc"
-    };
-    Logger.info("textFormulaVo is: " + JSON.stringify(textFormulaVo, null, "\t"));
-    Logger.warn("result is: " + textResolver.convert2Formula(textFormulaVo), null, "\t");
+               // =================================================================================
+               Logger.separate();
+               Logger.info("2.测试【会计科目】解析器");
+               Logger.separate();
+               // 2.1测试convert2Vo方法
+               Logger.caption("2.1 测试 subjectResolver.convert2Vo(subjectFormula)");
+               var subjectFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
+               Logger.info("subjectFormula is: " + subjectFormula);
+               Logger.warn("result is: " + JSON.stringify(subjectResolver.convert2Vo(subjectFormula), null, "\t"));
 
-    // =================================================================================
-    Logger.separate();
-    Logger.info("2.测试【会计科目】解析器");
-    Logger.separate();
-    // 2.1测试convert2Vo方法
-    Logger.caption("2.1 测试 subjectResolver.convert2Vo(subjectFormula)");
-    var subjectFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
-    Logger.info("subjectFormula is: " + subjectFormula);
-    Logger.warn("result is: " + JSON.stringify(subjectResolver.convert2Vo(subjectFormula), null, "\t"));
+               Logger.separate();
 
-    Logger.separate();
+               // 2.2测试convert2Vo方法
+               Logger.caption("2.2 测试 subjectResolver.convert2Formula(subjectFormulaVo)");
+               var subjectFormulaVo = {
+                   "subjectCodeList": [
+                       "100101"
+                   ],
+                   "reClassify": "1",
+                   "valueTypeCode": "20",
+                   "acctYearInc": "0",
+                   "acctMonthInc": "0",
+                   "exLossProfit": "0"
+               };
+               Logger.info("subjectFormulaVo is: " + JSON.stringify(subjectFormulaVo, null, "\t"));
+               Logger.warn("result is: " + subjectResolver.convert2Formula(subjectFormulaVo), null, "\t");
 
-    // 2.2测试convert2Vo方法
-    Logger.caption("2.2 测试 subjectResolver.convert2Formula(subjectFormulaVo)");
-    var subjectFormulaVo = {
-        "subjectCodeList": [
-            "100101"
-        ],
-        "reClassify": "1",
-        "valueTypeCode": "20",
-        "acctYearInc": "0",
-        "acctMonthInc": "0",
-        "exLossProfit": "0"
-    };
-    Logger.info("subjectFormulaVo is: " + JSON.stringify(subjectFormulaVo, null, "\t"));
-    Logger.warn("result is: " + subjectResolver.convert2Formula(subjectFormulaVo), null, "\t");
+               // =================================================================================
+               Logger.separate();
+               Logger.info("3.测试【表间取值】解析器");
+               Logger.separate();
+               // 3.1测试convert2Vo方法
+               Logger.caption("3.1 测试 mSheetResolver.convert2Vo(mSheetFormula)");
+               var mSheetFormula = "{FSTM_JS0102!<B3>}";
+               Logger.info("mSheetFormula is: " + mSheetFormula);
+               Logger.warn("result is: " + JSON.stringify(mSheetResolver.convert2Vo(mSheetFormula), null, "\t"));
 
-    // =================================================================================
-    Logger.separate();
-    Logger.info("3.测试【表间取值】解析器");
-    Logger.separate();
-    // 3.1测试convert2Vo方法
-    Logger.caption("3.1 测试 mSheetResolver.convert2Vo(mSheetFormula)");
-    var mSheetFormula = "{FSTM_JS0102!<B3>}";
-    Logger.info("mSheetFormula is: " + mSheetFormula);
-    Logger.warn("result is: " + JSON.stringify(mSheetResolver.convert2Vo(mSheetFormula), null, "\t"));
+               Logger.separate();
 
-    Logger.separate();
+               // 3.2测试convert2Vo方法
+               Logger.caption("3.2 测试 mSheetResolver.convert2Formula(mSheetFormulaVo)");
+               var mSheetFormulaVo = {
+                   "reportCode": "FSTM_JS0102",
+                   "position": "B3"
+               };
+               Logger.info("mSheetFormulaVo is: " + JSON.stringify(mSheetFormulaVo, null, "\t"));
+               Logger.warn("result is: " + mSheetResolver.convert2Formula(mSheetFormulaVo), null, "\t");
 
-    // 3.2测试convert2Vo方法
-    Logger.caption("3.2 测试 mSheetResolver.convert2Formula(mSheetFormulaVo)");
-    var mSheetFormulaVo = {
-        "reportCode": "FSTM_JS0102",
-        "position": "B3"
-    };
-    Logger.info("mSheetFormulaVo is: " + JSON.stringify(mSheetFormulaVo, null, "\t"));
-    Logger.warn("result is: " + mSheetResolver.convert2Formula(mSheetFormulaVo), null, "\t");
+               // =================================================================================
+               Logger.separate();
+               Logger.info("4.测试【常用字(其它)】解析器");
+               Logger.separate();
+               // 4.1测试convert2Vo方法
+               Logger.caption("4.1 测试 commonWorldResolver.convert2Vo(commonWorldFormula)");
+               var commonWorldFormula = "#queryTIN#";
+               Logger.info("commonWorldFormula is: " + commonWorldFormula);
+               Logger.warn("result is: " + JSON.stringify(commonWorldResolver.convert2Vo(commonWorldFormula), null, "\t"));
 
-    // =================================================================================
-    Logger.separate();
-    Logger.info("4.测试【常用字(其它)】解析器");
-    Logger.separate();
-    // 4.1测试convert2Vo方法
-    Logger.caption("4.1 测试 commonWorldResolver.convert2Vo(commonWorldFormula)");
-    var commonWorldFormula = "#queryTIN#";
-    Logger.info("commonWorldFormula is: " + commonWorldFormula);
-    Logger.warn("result is: " + JSON.stringify(commonWorldResolver.convert2Vo(commonWorldFormula), null, "\t"));
+               Logger.separate();
 
-    Logger.separate();
-
-    // 4.2测试convert2Vo方法
-    Logger.caption("2.2 测试 commonWorldResolver.convert2Formula(commonWorldFormulaVo)");
-    var commonWorldFormulaVo = {
-        "name": "queryTIN",
-        "label": "纳税人识别号"
-    };
-    Logger.info("commonWorldFormulaVo is: " + JSON.stringify(commonWorldFormulaVo, null, "\t"));
-    Logger.warn("result is: " + commonWorldResolver.convert2Formula(commonWorldFormulaVo), null, "\t");
-
-
-    // =================================================================================
-    Logger.separate();
-    Logger.info("5.测试【单元格】解析器");
-    Logger.separate();
-    // 5.1测试convert2Vo方法
-    Logger.caption("5.1 测试 sheetResolver.convert2Vo(sheetFormula)");
-    var sheetFormula = "<C3>";
-    Logger.info("sheetFormula is: " + sheetFormula);
-    Logger.warn("result is: " + JSON.stringify(sheetResolver.convert2Vo(sheetFormula), null, "\t"));
-
-    Logger.separate();
-
-    // 5.2测试convert2Vo方法
-    Logger.caption("5.2 测试 sheetFormula.convert2Formula(sheetFormulaVo)");
-    var sheetFormulaVo =  {
-        "position": "C3"
-    };
-    Logger.info("sheetFormulaVo is: " + JSON.stringify(sheetFormulaVo, null, "\t"));
-    Logger.warn("result is: " + sheetResolver.convert2Formula(sheetFormulaVo), null, "\t");
+               // 4.2测试convert2Vo方法
+               Logger.caption("2.2 测试 commonWorldResolver.convert2Formula(commonWorldFormulaVo)");
+               var commonWorldFormulaVo = {
+                   "name": "queryTIN",
+                   "label": "纳税人识别号"
+               };
+               Logger.info("commonWorldFormulaVo is: " + JSON.stringify(commonWorldFormulaVo, null, "\t"));
+               Logger.warn("result is: " + commonWorldResolver.convert2Formula(commonWorldFormulaVo), null, "\t");
 
 
-    // =================================================================================
-    Logger.separate();
-    Logger.info("6.测试【求和(SUM)】解析器");
-    Logger.separate();
-    // 6.1测试convert2Vo方法
-    Logger.caption("6.1 测试 sumResolver.convert2Vo(sumFormulaVo)");
-    var sumFormula = "SUM(<C1>:<C2>)";
-    Logger.info("sumFormulaVo is: " + sumFormula);
-    Logger.warn("result is: " + JSON.stringify(sumResolver.convert2Vo(sumFormula), null, "\t"));
+               // =================================================================================
+               Logger.separate();
+               Logger.info("5.测试【单元格】解析器");
+               Logger.separate();
+               // 5.1测试convert2Vo方法
+               Logger.caption("5.1 测试 sheetResolver.convert2Vo(sheetFormula)");
+               var sheetFormula = "<C3>";
+               Logger.info("sheetFormula is: " + sheetFormula);
+               Logger.warn("result is: " + JSON.stringify(sheetResolver.convert2Vo(sheetFormula), null, "\t"));
 
-    Logger.separate();
+               Logger.separate();
 
-    // 6.2测试convert2Vo方法
-    Logger.caption("6.2 测试 sumResolver.convert2Formula(sumFormulaVo)");
-    var sumFormulaVo =  {
-        "startPosition": "C1",
-        "endPosition": "C2"
-    };
-    Logger.info("sumFormulaVo is: " + JSON.stringify(sumFormulaVo, null, "\t"));
-    Logger.warn("result is: " + sumResolver.convert2Formula(sumFormulaVo), null, "\t");
+               // 5.2测试convert2Vo方法
+               Logger.caption("5.2 测试 sheetFormula.convert2Formula(sheetFormulaVo)");
+               var sheetFormulaVo =  {
+                   "position": "C3"
+               };
+               Logger.info("sheetFormulaVo is: " + JSON.stringify(sheetFormulaVo, null, "\t"));
+               Logger.warn("result is: " + sheetResolver.convert2Formula(sheetFormulaVo), null, "\t");
 
+
+               // =================================================================================
+               Logger.separate();
+               Logger.info("6.测试【求和(SUM)】解析器");
+               Logger.separate();
+               // 6.1测试convert2Vo方法
+               Logger.caption("6.1 测试 sumResolver.convert2Vo(sumFormulaVo)");
+               var sumFormula = "SUM(<C1>:<C2>)";
+               Logger.info("sumFormulaVo is: " + sumFormula);
+               Logger.warn("result is: " + JSON.stringify(sumResolver.convert2Vo(sumFormula), null, "\t"));
+
+               Logger.separate();
+
+               // 6.2测试convert2Vo方法
+               Logger.caption("6.2 测试 sumResolver.convert2Formula(sumFormulaVo)");
+               var sumFormulaVo =  {
+                   "startPosition": "C1",
+                   "endPosition": "C2"
+               };
+               Logger.info("sumFormulaVo is: " + JSON.stringify(sumFormulaVo, null, "\t"));
+               Logger.warn("result is: " + sumResolver.convert2Formula(sumFormulaVo), null, "\t");
+
+           */
     //</editor-fold>
-*/
 
 
-// formulaTreeResolver.resolve(" abc3#corpName#");
-// formulaTreeResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
-// formulaTreeResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-//     formulaTreeResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-// formulaTreeResolver.resolve("{13_01!<C41>}");
-
+    //<editor-fold desc="测试复杂公式">
+    /*
+    formulaTreeResolver.resolve(" abc3#corpName#");
+    formulaTreeResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
+    formulaTreeResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+    formulaTreeResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+    formulaTreeResolver.resolve("{13_01!<C41>}");
+    */
+    //</editor-fold>
     //<editor-fold desc="1.测试单个公式">
-    Logger.separate();
-    Logger.caption("测试解析树")
-    // 1.1.测试普通文本
-    Logger.info("1.1.测试普通文本");
-    formulaTreeResolver.resolve("abc");
+    /*
+        Logger.separate();
+        Logger.caption("测试解析树")
+        // 1.1.测试普通文本
+        Logger.info("1.1.测试普通文本");
+        formulaTreeResolver.resolve("abc");
 
-    // 1.2.测试【会计科目】公式
-    Logger.info("1.2.测试【会计科目】公式");
-    formulaTreeResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
-    // 1.3.测试【表间取值】公式
-    Logger.info("1.3.测试【表间取值】公式");
-    formulaTreeResolver.resolve("{FSTM_JS0102!<B3>}");
+        // 1.2.测试【会计科目】公式
+        Logger.info("1.2.测试【会计科目】公式");
+        formulaTreeResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
+        // 1.3.测试【表间取值】公式
+        Logger.info("1.3.测试【表间取值】公式");
+        formulaTreeResolver.resolve("{FSTM_JS0102!<B3>}");
 
-    // 1.4.测试【常用字(其它)】公式
-    Logger.info("1.4.测试【常用字(其它)】公式");
-    formulaTreeResolver.resolve("#queryTIN#");
+        // 1.4.测试【常用字(其它)】公式
+        Logger.info("1.4.测试【常用字(其它)】公式");
+        formulaTreeResolver.resolve("#queryTIN#");
 
-    // 1.5.测试 【单元格】公式
-    Logger.info("1.5.测试 【单元格】公式");
-    formulaTreeResolver.resolve("<C3>");
+        // 1.5.测试 【单元格】公式
+        Logger.info("1.5.测试 【单元格】公式");
+        formulaTreeResolver.resolve("<C3>");
 
-    // 1.6.测试 【求和(SUM)】公式
-    Logger.info(" 1.6.测试 【求和(SUM)】公式");
-    formulaTreeResolver.resolve("SUM(<C1>:<C2>)");
+        // 1.6.测试 【求和(SUM)】公式
+        Logger.info(" 1.6.测试 【求和(SUM)】公式");
+        formulaTreeResolver.resolve("SUM(<C1>:<C2>)");
 
-    // 1.7.测试 【条件(IF)】公式
+        // 1.7.测试 【条件(IF)】公式
 
-    // 1.8.测试 【组(Group)】公式
-    Logger.info(" 1.8.测试 【组(Group)】公式");
-    formulaTreeResolver.resolve("(1+2)");
+        // 1.8.测试 【组(Group)】公式
+        Logger.info(" 1.8.测试 【组(Group)】公式");
+        formulaTreeResolver.resolve("(1+2)");
 
+        */
     //</editor-fold>
-
-   //<editor-fold desc="2.测试组和公式">
+    //<editor-fold desc="2.测试组和公式">
+    /*
     // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
     Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
     formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
-    /*
+
         // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
         // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
 
-        //</editor-fold>*/
+        */
+    //</editor-fold>
+
+    //<editor-fold desc="测试渲染文本">
+    function testFormulaRender(title, formula, result) {
+        var $formulaBox = $("#formulaBox"), template = "";
+
+        template += '<div class="separator">==================================================================================================================</div>';
+        template += '<h4><%= title %></h4>';
+        template += '<div>';
+        template += '   <div class="caption">the formula is:<%= formula %></div>';
+        template += '   <div>result is:<br/> <%= result %></div>';
+        template += '<div>';
+        template += '</div>';
+        template += '<div class="separator">==================================================================================================================</div>';
+
+        $formulaBox.append(String(_.template(template, {
+            title: title,
+            formula: $('<div/>').text(formula).html(),
+            result: result
+        })));
+    }
+
+    // 1.测试【普通文本】渲染
+    var textRenderTitle = "测试【普通文本】渲染"
+    var textRenderFormula = "abc";
+    var textRenderResult = textResolver.convert2Html(textResolver.convert2Vo(textRenderFormula));
+    testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
+
+    // 2.测试【会计科目】渲染
+    var subjectRenderTitle = "测试【会计科目】渲染"
+    var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
+    var subjectRenderResult = subjectResolver.convert2Html(subjectResolver.convert2Vo(subjectRenderFormula));
+    testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
+
+    // 3.测试【表间取值】渲染
+    var mSheetRenderTitle = "测试【表间取值】渲染"
+    var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
+    var mSheetRenderResult = mSheetResolver.convert2Html(mSheetResolver.convert2Vo(mSheetRenderFormula));
+    testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
+
+    // 4.测试【常用字(其它)】渲染
+    var commonWorldRenderTitle = "测试【常用字(其它)】渲染"
+    var commonWorldRenderFormula = "#queryTIN#";
+    var commonWorldRenderResult = commonWorldResolver.convert2Html(commonWorldResolver.convert2Vo(commonWorldRenderFormula));
+    testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
+
+    // 5.测试【单元格】渲染
+    var sheetRenderTitle = "测试【单元格】渲染"
+    var sheetRenderFormula = "<C3>";
+    var sheetRenderResult = sheetResolver.convert2Html(sheetResolver.convert2Vo(sheetRenderFormula));
+    testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
+
+    // 6.测试【求和(SUM)】渲染
+    var sumRenderTitle = "测试【求和(SUM)】渲染"
+    var sumRenderFormula = "SUM(<C1>:<C2>)";
+    var sumRenderResult = sumResolver.convert2Html(sumResolver.convert2Vo(sumRenderFormula));
+    testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
+
+    // 7.测试混合公式的渲染
+    var complexRenderTitle = "测试混合公式的渲染"
+    var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
+    var complexRenderResult = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula));
+    testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
+
+    //</editor-fold>
+
 })(formulaTreeResolver);
 
