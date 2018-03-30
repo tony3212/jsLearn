@@ -60,7 +60,7 @@ var Logger = {
  * @interface
  * @type {{convert2Vo: *}}
  */
-var IResolver = IResolver || {
+var ISymbolResolver = ISymbolResolver || {
     /**
      * 是否是正确的公式
      * @param {string} formula 公式
@@ -91,12 +91,12 @@ var IResolver = IResolver || {
 
 /**
  * 【普通文本】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  *
  * @typedef {Object} TextFormulaVo 【普通文本VO】
  * @property {string} text 普通文本
  */
-var textResolver = $.extend(true, {}, IResolver, {
+var textResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
      * @param {?string} [formula] 公式
@@ -126,7 +126,7 @@ var textResolver = $.extend(true, {}, IResolver, {
 
 /**
  * 【会计科目】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  *
  * @typedef {Object} SubjectFormulaVo 【会计科目公式相关信息】
  * @property {Array} subjectCodeList 会计科目编码集合
@@ -142,7 +142,7 @@ var textResolver = $.extend(true, {}, IResolver, {
  *
  * @typedef {string} SubjectFormula 会计科目公式，形如[K100201,100202,(2201,2202,)^S1^G41^Y2008^M2^E1]
  */
-var subjectResolver = $.extend(true, {}, IResolver, {
+var subjectResolver = $.extend(true, {}, ISymbolResolver, {
     SYMBOL: {
         /* 开始符 */
         STARTER: "[",
@@ -477,9 +477,9 @@ var subjectResolver = $.extend(true, {}, IResolver, {
 
 /**
  * 【表间取值】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  */
-var mSheetResolver = $.extend(true, {}, IResolver, {
+var mSheetResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
      * @param {string} formula 公式
@@ -533,9 +533,9 @@ var mSheetResolver = $.extend(true, {}, IResolver, {
 
 /**
  * 【常用字(其它)】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  */
-var commonWorldResolver = $.extend(true, {}, IResolver, {
+var commonWorldResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
      * @param {string} formula 公式
@@ -603,9 +603,9 @@ var commonWorldResolver = $.extend(true, {}, IResolver, {
 
 /**
  * 【常用字(其它)】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  */
-var sheetResolver = $.extend(true, {}, IResolver, {
+var sheetResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
      * @param {string} formula 公式
@@ -648,9 +648,9 @@ var sheetResolver = $.extend(true, {}, IResolver, {
 
 /**
  *【求和(SUM)】解析器
- * @implements {IResolver}
+ * @implements {ISymbolResolver}
  */
-var sumResolver = $.extend(true, {}, IResolver, {
+var sumResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
      * @param {string} formula 公式
@@ -717,12 +717,21 @@ $.extend(formulaTreeResolver, {
      * @private
      */
     _createTextFormulaNode: function (text) {
-        return {
+        var self = this, formulaNode, symbolResolver;
+
+        formulaNode = {
             type: "TEXT",
             formula: text,
             formulaVo: text,
             children: null
         };
+
+        symbolResolver = self._getSymbolResolver(formulaNode.type);
+        if (symbolResolver && symbolResolver.convert2Vo) {
+            formulaNode.formulaVo = symbolResolver.convert2Vo(formulaNode.formula);
+        }
+
+        return formulaNode;
     },
 
     /**
@@ -786,6 +795,8 @@ $.extend(formulaTreeResolver, {
      * @private
      */
     _updateNode: function (formulaNode, starterInfo, terminatorInfo, formula) {
+        var self = this, symbolResolver;
+
         Logger.trace("=================updateNode========================");
         Logger.trace(JSON.stringify(formulaNode));
         Logger.trace(JSON.stringify(starterInfo));
@@ -793,6 +804,10 @@ $.extend(formulaTreeResolver, {
 
         formulaNode.type = starterInfo.symbolName;
         formulaNode.formula = String(formula).substring(starterInfo.index, terminatorInfo.index + 1);
+        symbolResolver = self._getSymbolResolver(starterInfo.symbolName);
+        if (symbolResolver && symbolResolver.convert2Vo) {
+            formulaNode.formulaVo = symbolResolver.convert2Vo(formulaNode.formula);
+        }
     }
 });
 //</editor-fold>
@@ -858,6 +873,19 @@ $.extend(formulaTreeResolver, {
             TERMINATOR: ")",
             LEAF: false
         }
+    },
+
+    /**
+     * 解析器映射
+     * 须与SYMBOL的属性匹配
+     */
+    resolverMap: {
+        TEXT: textResolver,
+        SUBJECT: subjectResolver,
+        M_SHEET: mSheetResolver,
+        COMMON_WORD: commonWorldResolver,
+        SHEET: sheetResolver,
+        SUM: sumResolver
     },
 
     /**
@@ -998,6 +1026,16 @@ $.extend(formulaTreeResolver, {
 
     _getSymbolValue: function (symbol) {
         return symbol != null ? _.values(symbol)[0] : null;
+    },
+
+    /**
+     * 根据公式类型名称获得解析器
+     * @param symbolName
+     * @returns {*}
+     * @private
+     */
+    _getSymbolResolver: function (symbolName) {
+        return this.resolverMap[symbolName];
     },
 
     /**
@@ -1155,6 +1193,7 @@ $.extend(formulaTreeResolver, {
 // 测试
 (function () {
 
+/*
     //<editor-fold desc="测试解析器">
 
     // =================================================================================
@@ -1290,6 +1329,7 @@ $.extend(formulaTreeResolver, {
     Logger.warn("result is: " + sumResolver.convert2Formula(sumFormulaVo), null, "\t");
 
     //</editor-fold>
+*/
 
 
 // formulaTreeResolver.resolve(" abc3#corpName#");
@@ -1308,7 +1348,6 @@ $.extend(formulaTreeResolver, {
     // 1.2.测试【会计科目】公式
     Logger.info("1.2.测试【会计科目】公式");
     formulaTreeResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
-
     // 1.3.测试【表间取值】公式
     Logger.info("1.3.测试【表间取值】公式");
     formulaTreeResolver.resolve("{FSTM_JS0102!<B3>}");
@@ -1333,15 +1372,15 @@ $.extend(formulaTreeResolver, {
 
     //</editor-fold>
 
-    //<editor-fold desc="2.测试组和公式">
+   //<editor-fold desc="2.测试组和公式">
     // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
     Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
     formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
+    /*
+        // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
-    // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
+        // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
 
-    // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
-
-    //</editor-fold>
+        //</editor-fold>*/
 })(formulaTreeResolver);
 
