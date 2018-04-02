@@ -795,6 +795,52 @@ var sumResolver = $.extend(true, {}, ISymbolResolver, {
         return String(_.template(template, formulaVo));
     }
 });
+
+var ifResolver = $.extend(true, {}, ISymbolResolver, {
+    /**
+     * 是否是正确的公式
+     * @param {string} formula 公式
+     * @returns {boolean}
+     */
+    isValidateFormula: function (formula) {
+        return /SUM\(<([^)]+)>:<([^)]+)>\)/g.test(formula);
+    },
+
+    /**
+     * 将基本公式转成vo对象
+     * @param formula 基本公式
+     * @returns {Object}
+     */
+    convert2Vo: function (formula) {
+        var self = this, matchResult;
+
+        if (!self.isValidateFormula(formula)) {
+            return null;
+        }
+
+        matchResult = /SUM\(<([^)]+)>:<([^)]+)>\)/g.exec(formula);
+        return matchResult != null
+            ? {startPosition: $.trim(matchResult[1]), endPosition: $.trim(matchResult[2])}
+            : null;
+    },
+
+    /**
+     * 将vo转成formula公式
+     * @param formulaVo 公式vo
+     * @returns {(null | string)} 公式
+     */
+    convert2Formula: function (formulaVo) {
+    },
+
+    /**
+     * 将vo转成html
+     * @param formulaVo 公式vo
+     * @param {?string} template 模板
+     * @returns {(null | string)} 公式
+     */
+    convert2Html: function (formulaVo, template) {
+    }
+});
 //</editor-fold>
 
 /**
