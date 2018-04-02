@@ -6,7 +6,7 @@ var Logger = {
         ERROR: 3
     },
 
-    level: 1,
+    level: 0,
 
     log: function (level, text, style) {
         if (level < this.level) {
@@ -796,6 +796,10 @@ var sumResolver = $.extend(true, {}, ISymbolResolver, {
     }
 });
 
+/**
+ *【条件IF】解析器
+ * @implements {ISymbolResolver}
+ */
 var ifResolver = $.extend(true, {}, ISymbolResolver, {
     /**
      * 是否是正确的公式
@@ -913,6 +917,20 @@ $.extend(formulaTreeResolver, {
             children: null
         };
     },
+    /**
+     * 创建操作符节点
+     * @returns {{FormulaNode}}
+     * @private
+     */
+    _createLogicFormulaNode: function (operator) {
+        Logger.trace("logic operator:" + JSON.stringify(operator));
+        return {
+            type: "LOGIC",
+            formula: this._getSymbolValue(operator),
+            formulaVo: null,
+            children: null
+        };
+    },
 
     /**
      * 获得上级节点
@@ -973,6 +991,15 @@ $.extend(formulaTreeResolver, {
         SUBTRACT: "-",
         MULTIPLY: "*",
         DIVIDE: "/"
+    },
+
+    /** 逻辑运算符 */
+    LOGIC_OPERATOR: {
+        GT: ">",
+        LT: "<",
+        GE: ">=",
+        LE: "<=",
+        EQ: "=="
     },
 
     SYMBOL: {
@@ -1039,6 +1066,51 @@ $.extend(formulaTreeResolver, {
         SUM: sumResolver
     },
 
+    _CONST: {
+        STARTER_SYMBOL_ARRAY: null,
+        TERMINATOR_SYMBOL_ARRAY: null
+    },
+
+    /**
+     * 获得公式元素数组
+     * @returns {*}
+     * @private
+     */
+    _getSymbolArray: function () {
+        return _.map(this.SYMBOL, function (symbolValue, symbolName) {
+            return _.object([symbolName],[symbolValue]);
+        });
+    },
+
+    /**
+     * 获得公式元素数组
+     * @returns {*}
+     * @private
+     */
+    _getSymbolArrayOrderByStarterLengthDesc: function () {
+        var self = this;
+
+        if (self._CONST.STARTER_SYMBOL_ARRAY == null) {
+            self._CONST.STARTER_SYMBOL_ARRAY = _.sortBy(self._getSymbolArray(), function (symbol) {
+                return -(self._getSymbolValue(symbol).STARTER.length);
+            });
+        }
+
+        return self._CONST.STARTER_SYMBOL_ARRAY;
+    },
+
+    _getSymbolArrayOrderByTerminatorLengthDesc: function () {
+        var self = this;
+
+        if (self._CONST.TERMINATOR_SYMBOL_ARRAY == null) {
+            self._CONST.TERMINATOR_SYMBOL_ARRAY = _.sortBy(self._getSymbolArray(), function (symbol) {
+                return -(self._getSymbolValue(symbol).TERMINATOR.length);
+            });
+        }
+
+        return self._CONST.TERMINATOR_SYMBOL_ARRAY;
+    },
+
     /**
      * 遍历公式元素
      * @param {function} callback 回调函数
@@ -1082,6 +1154,23 @@ $.extend(formulaTreeResolver, {
         return result;
     },
 
+    _findLogic: function (matchingText) {
+        var self = this, result = null;
+
+        $.each(self.LOGIC_OPERATOR, function (key, operator) {
+            var index = String(matchingText).indexOf(operator);
+
+            if (index >= 0) {
+                result = {
+                    symbol: $.extend(true, {}, _.object([key], [operator])),
+                    beforeContext: String(matchingText).substring(0, index)
+                };
+                return false;
+            }
+        });
+        return result;
+    },
+
     /**
      * 在给定的文件中查找启起符结果
      *
@@ -1100,14 +1189,16 @@ $.extend(formulaTreeResolver, {
      * @private
      */
     _findStarter: function (matchingText) {
-        var result = null;
+        var self = this, result = null, symbolArray;
 
-        this._forEachSymbol(function (key, mark) {
-            var index = String(matchingText).indexOf(mark.STARTER);
+        symbolArray = self._getSymbolArrayOrderByStarterLengthDesc();
+        $.each(symbolArray, function (key, symbol) {
+            var symbolValue = self._getSymbolValue(symbol),
+                index = String(matchingText).indexOf(symbolValue.STARTER);
 
             if (index >= 0) {
                 result = {
-                    symbol: $.extend(true, {}, _.object([key], [mark])),
+                    symbol: $.extend(true, {}, symbol),
                     beforeContext: String(matchingText).substring(0, index)
                 };
                 return false;
@@ -1136,7 +1227,7 @@ $.extend(formulaTreeResolver, {
      * @private
      */
     _findTerminator: function (matchingText, symbol) {
-        var self = this, matchResult, index, result = null;
+        var self = this, index, matchResult, result = null;
 
 
         // 如果有传symbol时,直接返回匹配结果
@@ -1150,12 +1241,13 @@ $.extend(formulaTreeResolver, {
                 : null;
         }
 
-        self._forEachSymbol(function (symbolName, symbolValue) {
-            index = String(matchingText).indexOf(symbolValue.TERMINATOR);
+        $.each(self._getSymbolArrayOrderByTerminatorLengthDesc(), function (key, symbol) {
+            var symbolValue = self._getSymbolValue(symbol),
+                index = String(matchingText).indexOf(symbolValue.TERMINATOR);
 
             if (index >= 0) {
                 matchResult = {
-                    symbol: $.extend(true, {}, _.object([symbolName], [symbolValue])),
+                    symbol: $.extend(true, {}, symbol),
                     beforeContext: String(matchingText).substring(0, index)
                 };
 
@@ -1204,7 +1296,7 @@ $.extend(formulaTreeResolver, {
         Logger.caption("formula is: " + formula);
 
         var lastResolvingIndex, startTerminalSame = false, resolvingLeaf = false,
-            operateResult,
+            operateResult, logicResult, errorMessage,
             starterResult, starterSymbol, starterSymbolValue, starterSymbolName,
             terminatorResult, terminatorSymbol, terminatorSymbolValue,
             parentFormulaNode, updatingNode, emptyFormulaNode, emptyTextNode,
@@ -1277,31 +1369,74 @@ $.extend(formulaTreeResolver, {
                 continue;
             }
 
-            // 3.匹配结束符
+            if (_.size(resolvingSymbolArray) > 0) {
+                starterInfo = _.last(resolvingSymbolArray);
+                starterSymbolName = starterInfo.symbolName;
+            } else {
+                starterInfo = null;
+                starterSymbolName = null;
+            }
             terminatorResult = self._findTerminator(
                 matchingText,
-                resolvingLeaf ? _.last(resolvingSymbolArray).symbol : null
+                resolvingLeaf ? starterInfo.symbol : null
             );
-            if (terminatorResult != null) {
-                Logger.info("terminatorResult: " + JSON.stringify(terminatorResult));
 
-                starterInfo = resolvingSymbolArray.pop();
-                starterSymbolName = starterInfo.symbolName;
-                if ($.isArray(terminatorResult)) {
-                    terminatorResult = _.find(terminatorResult, function (termResult) {
-                        return starterSymbolName === self._getSymbolName(termResult.symbol);
-                    });
+            if (terminatorResult == null) {
+                continue;
+            }
+
+            terminatorResult = $.isArray(terminatorResult)
+                ? _.find(terminatorResult, function (termResult) {
+                    return starterSymbolName === self._getSymbolName(termResult.symbol);
+                })
+                : terminatorResult;
+
+            logicResult = self._findLogic(matchingText);
+
+            // 3.处理操作符
+            if (logicResult != null && (
+                starterSymbolName == null ||
+                starterSymbolName !== self._getSymbolName(terminatorResult.symbol)
+            )) {
+                Logger.info("logicResult: " + JSON.stringify(logicResult));
+                emptyTextNode = logicResult.beforeContext !== ""
+                    ? self._createTextFormulaNode(logicResult.beforeContext)
+                    : null;
+                emptyFormulaNode = self._createLogicFormulaNode(logicResult.symbol);
+                parentFormulaNode = self._getParentFormulaNode(resolvingSymbolArray);
+                if (parentFormulaNode == null) {
+                    emptyTextNode && formulaTree.push(emptyTextNode);
+                    formulaTree.push(emptyFormulaNode);
+                } else {
+                    emptyTextNode && self._addFormulaChild(parentFormulaNode, emptyTextNode);
+                    self._addFormulaChild(parentFormulaNode, emptyFormulaNode);
                 }
+                formulaTree.push();
+                Logger.trace("匹配逻辑操作符：" + JSON.stringify(formulaTree));
+                matchingText = "";
+                resolvingLeaf = false;
+                continue;
+            }
+
+            if (logicResult == null && starterSymbolName == null && terminatorResult != null) {
+                errorMessage = "报表公式不正确，没有找到起始符";
+                Logger.error(errorMessage);
+                throw new Error(errorMessage);
+            }
+
+            if (logicResult == null && starterSymbolName !== self._getSymbolName(terminatorResult.symbol)) {
+                errorMessage = "报表公式不正确，" +
+                    "起始符（" + starterSymbolName + "）与" +
+                    "结束符（" + self._getSymbolName(terminatorResult.symbol) + "）不匹配";
+                Logger.error(errorMessage);
+                throw new Error(errorMessage);
+            }
+
+            // 4.处理结束符
+            if (starterSymbolName === self._getSymbolName(terminatorResult.symbol)) {
+                resolvingSymbolArray.pop();
                 terminatorSymbol = terminatorResult.symbol;
                 terminatorSymbolValue = self._getSymbolValue(terminatorSymbol);
-                if (starterResult === undefined) {
-                    Logger.error("报表公式不正确");
-                    throw new Error("报表公式不正确");
-                }
-                if (starterSymbolName !== self._getSymbolName(terminatorSymbol)) {
-                    Logger.error("报表公式不正确");
-                    throw new Error("报表公式不正确");
-                }
                 updatingNode = starterInfo.formulaNode;
                 terminatorInfo = {
                     index: i,
@@ -1327,6 +1462,7 @@ $.extend(formulaTreeResolver, {
                 resolvingLeaf = false;
                 lastResolvingIndex = i;
             }
+
         }
         if (lastResolvingIndex < formula.length - 1) {
             formulaTree.push(self._createTextFormulaNode(formula.substring(lastResolvingIndex + 1)));
@@ -1518,7 +1654,7 @@ $.extend(formulaTreeResolver, {
     */
     //</editor-fold>
     //<editor-fold desc="1.测试单个公式">
-    /*
+    /*  */
         Logger.separate();
         Logger.caption("测试解析树")
         // 1.1.测试普通文本
@@ -1544,13 +1680,15 @@ $.extend(formulaTreeResolver, {
         Logger.info(" 1.6.测试 【求和(SUM)】公式");
         formulaTreeResolver.resolve("SUM(<C1>:<C2>)");
 
+
         // 1.7.测试 【条件(IF)】公式
 
-        // 1.8.测试 【组(Group)】公式
-        Logger.info(" 1.8.测试 【组(Group)】公式");
-        formulaTreeResolver.resolve("(1+2)");
+//         formulaTreeResolver.resolve("IF#(1+2>0,true,false)#IF");
 
-        */
+        // 1.8.测试 【组(Group)】公式
+//         Logger.info(" 1.8.测试 【组(Group)】公式");
+//         formulaTreeResolver.resolve("(1+2)");
+
     //</editor-fold>
     //<editor-fold desc="2.测试组和公式">
     /*
@@ -1566,6 +1704,7 @@ $.extend(formulaTreeResolver, {
     //</editor-fold>
 
     //<editor-fold desc="测试渲染文本">
+    /*
     function testFormulaRender(title, formula, result) {
         var $formulaBox = $("#formulaBox"), template = "";
 
@@ -1626,7 +1765,7 @@ $.extend(formulaTreeResolver, {
     var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
     var complexRenderResult = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula));
     testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
-
+*/
     //</editor-fold>
 
 })(formulaTreeResolver);
