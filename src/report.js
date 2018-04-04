@@ -888,7 +888,7 @@ var ifResolver = $.extend(true, {}, ISymbolResolver, {
     resolveVoField: ["condition", "trueValue", "falseValue"],
 
     getRegex: function () {
-        return /IF#\((.*),(.*),(.*)\)#IF/g;
+        return /IF#\(((?:[^(),]+|\([^)]+,[^)]+\))+),((?:[^(),]+|\([^)]+,[^)]+\))+),((?:[^(),]+|\([^)]+,[^)]+\))+)\)#IF/g;
     },
 
     /**
