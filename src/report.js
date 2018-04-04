@@ -938,9 +938,30 @@ var ifResolver = $.extend(true, {}, ISymbolResolver, {
      * 将vo转成html
      * @param formulaVo 公式vo
      * @param {?string} template 模板
+     * @param {?function} renderCallback 模板
+     * @param {?object} renderContext 执行回调函数的上下文
      * @returns {(null | string)} 公式
      */
-    convert2Html: function (formulaVo, template) {
+    convert2Html: function (formulaVo, template, renderCallback, renderContext) {
+        var defaultTemplate = '', children, conditionHtml, trueHtml, falseHtml;
+
+        children = formulaVo.children;
+        conditionHtml = renderCallback.apply(renderContext, [children[0]]);
+        trueHtml = renderCallback.apply(renderContext, [children[1]]);
+        falseHtml = renderCallback.apply(renderContext, [children[2]]);
+        defaultTemplate += '<span  class="formula formula_if">';
+        defaultTemplate += 'IF(';
+        defaultTemplate += '<%= conditionHtml %><span class="formula_if_separator">,</span>';
+        defaultTemplate += '<%= trueHtml %><span class="formula_if_separator">,</span>';
+        defaultTemplate += '<%= falseHtml %>';
+        defaultTemplate += ')';
+        defaultTemplate += '</span>';
+        template || (template = defaultTemplate);
+        return String(_.template(template, $.extend(true, {}, formulaVo, {
+            conditionHtml: conditionHtml,
+            trueHtml: trueHtml,
+            falseHtml: falseHtml
+        })));
     }
 });
 
@@ -1601,7 +1622,7 @@ $.extend(formulaTreeResolver, {
 
                 // 2.1找出父节点
                 parentNode = self._getParentFormulaNode(resolvingSymbolArray);
-                emptyTextNode = $.beforeContext !== "" ? self._createTextFormulaNode(beforeContext) : null;
+                emptyTextNode = beforeContext !== "" ? self._createTextFormulaNode(beforeContext) : null;
                 // 2.2添加普通文本公式
                 self._addFormulaNode(emptyTextNode, parentNode, formulaTree);
 
@@ -1713,18 +1734,36 @@ $.extend(formulaTreeResolver, {
     renderHtml: function (formulaTree) {
         var self = this, html = "", resolver;
 
+        if (formulaTree == null) {
+            return "";
+        }
+
+        if ($.isPlainObject(formulaTree)) {
+            formulaTree = [formulaTree];
+        }
+
+        if (_.size(formulaTree) === 0) {
+            return "";
+        }
+
         $.each(formulaTree, function (index, formulaNode) {
             var type = formulaNode.type;
 
+            resolver = self._getSymbolResolver(type);
             if (_.size(formulaNode.children) === 0) {
-                resolver = self._getSymbolResolver(type);
                 if (resolver) {
                     html += resolver.convert2Html(formulaNode.formulaVo);
                 } else if (type === "OPERATOR") {
                     html += _.template('<span class="formula formula_operator"><%= text%></span>', {text: formulaNode.formula});
+                } else if (type === "LOGIC") {
+                    html += _.template('<span class="formula formula_logic"><%= text%></span>', {text: formulaNode.formula});
                 }
             } else {
-                html += "<span>" + self.renderHtml(formulaNode.children) + "</span>";
+                if (resolver) {
+                    html += resolver.convert2Html(formulaNode, null, self.renderHtml, self);
+                } else {
+                    html += '<span class="formula_' + String(type).toLocaleLowerCase() + '">' + self.renderHtml(formulaNode.children) + '</span>';
+                }
             }
         });
         return html;
@@ -1937,13 +1976,11 @@ $.extend(formulaTreeResolver, {
     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
     formulaTreeResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
-*/
-
 
        // 1.8.测试 【组(Group)】公式
        Logger.info(" 1.8.测试 【组(Group)】公式");
        formulaTreeResolver.resolve("(1+2)");
-
+*/
     //</editor-fold>
     //<editor-fold desc="2.测试组和公式">
     /*
@@ -1960,7 +1997,7 @@ $.extend(formulaTreeResolver, {
     //</editor-fold>
 
     //<editor-fold desc="测试渲染文本">
-    /*
+
     function testFormulaRender(title, formula, result) {
         var $formulaBox = $("#formulaBox"), template = "";
 
@@ -1979,50 +2016,72 @@ $.extend(formulaTreeResolver, {
             result: result
         })));
     }
+/*
+   // 1.测试【普通文本】渲染
+   var textRenderTitle = "测试【普通文本】渲染"
+   var textRenderFormula = "abc";
+   var textRenderResult = textResolver.convert2Html(textResolver.convert2Vo(textRenderFormula));
+   testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
 
-    // 1.测试【普通文本】渲染
-    var textRenderTitle = "测试【普通文本】渲染"
-    var textRenderFormula = "abc";
-    var textRenderResult = textResolver.convert2Html(textResolver.convert2Vo(textRenderFormula));
-    testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
+   // 2.测试【会计科目】渲染
+   var subjectRenderTitle = "测试【会计科目】渲染"
+   var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
+   var subjectRenderResult = subjectResolver.convert2Html(subjectResolver.convert2Vo(subjectRenderFormula));
+   testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
 
-    // 2.测试【会计科目】渲染
-    var subjectRenderTitle = "测试【会计科目】渲染"
-    var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
-    var subjectRenderResult = subjectResolver.convert2Html(subjectResolver.convert2Vo(subjectRenderFormula));
-    testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
+   // 3.测试【表间取值】渲染
+   var mSheetRenderTitle = "测试【表间取值】渲染"
+   var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
+   var mSheetRenderResult = mSheetResolver.convert2Html(mSheetResolver.convert2Vo(mSheetRenderFormula));
+   testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
 
-    // 3.测试【表间取值】渲染
-    var mSheetRenderTitle = "测试【表间取值】渲染"
-    var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
-    var mSheetRenderResult = mSheetResolver.convert2Html(mSheetResolver.convert2Vo(mSheetRenderFormula));
-    testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
+   // 4.测试【常用字(其它)】渲染
+   var commonWorldRenderTitle = "测试【常用字(其它)】渲染"
+   var commonWorldRenderFormula = "#queryTIN#";
+   var commonWorldRenderResult = commonWorldResolver.convert2Html(commonWorldResolver.convert2Vo(commonWorldRenderFormula));
+   testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
 
-    // 4.测试【常用字(其它)】渲染
-    var commonWorldRenderTitle = "测试【常用字(其它)】渲染"
-    var commonWorldRenderFormula = "#queryTIN#";
-    var commonWorldRenderResult = commonWorldResolver.convert2Html(commonWorldResolver.convert2Vo(commonWorldRenderFormula));
-    testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
+   // 5.测试【单元格】渲染
+   var sheetRenderTitle = "测试【单元格】渲染"
+   var sheetRenderFormula = "<C3>";
+   var sheetRenderResult = sheetResolver.convert2Html(sheetResolver.convert2Vo(sheetRenderFormula));
+   testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
 
-    // 5.测试【单元格】渲染
-    var sheetRenderTitle = "测试【单元格】渲染"
-    var sheetRenderFormula = "<C3>";
-    var sheetRenderResult = sheetResolver.convert2Html(sheetResolver.convert2Vo(sheetRenderFormula));
-    testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
+   // 6.测试【求和(SUM)】渲染
+   var sumRenderTitle = "测试【求和(SUM)】渲染"
+   var sumRenderFormula = "SUM(<C1>:<C2>)";
+   var sumRenderResult = sumResolver.convert2Html(sumResolver.convert2Vo(sumRenderFormula));
+   testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
+  */
+   // 7.测试混合公式的渲染
+   // 7.1 测试四则运算
+   var complexRenderTitle = "测试混合公式的渲染"
+   var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
+   var complexRenderResult = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula));
+   testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
 
-    // 6.测试【求和(SUM)】渲染
-    var sumRenderTitle = "测试【求和(SUM)】渲染"
-    var sumRenderFormula = "SUM(<C1>:<C2>)";
-    var sumRenderResult = sumResolver.convert2Html(sumResolver.convert2Vo(sumRenderFormula));
-    testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
+   // 7.2测试if运算
+   var complexRenderTitle1 = "测试混合公式之IF的渲染"
+   var complexRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
+   var complexRenderResult1 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula1));
+   testFormulaRender(complexRenderTitle1, complexRenderFormula1, complexRenderResult1);
 
-    // 7.测试混合公式的渲染
-    var complexRenderTitle = "测试混合公式的渲染"
-    var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
-    var complexRenderResult = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula));
-    testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
-*/
-    //</editor-fold>
+   var complexRenderTitle2 = "测试混合公式之IF的渲染"
+   var complexRenderFormula2 = "IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF";
+   var complexRenderResult2 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula2));
+   testFormulaRender(complexRenderTitle2, complexRenderFormula2, complexRenderResult2);
+
+   var complexRenderTitle3 = "测试混合公式之IF的渲染"
+   var complexRenderFormula3 = "IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF";
+   var complexRenderResult3 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula3));
+   testFormulaRender(complexRenderTitle3, complexRenderFormula3, complexRenderResult3);
+
+   var complexRenderTitle4 = "测试混合公式之IF的渲染"
+   var complexRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
+   var complexRenderResult4 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula4));
+   testFormulaRender(complexRenderTitle4, complexRenderFormula4, complexRenderResult4);
+
+   //</editor-fold>
 
 //     Logger.info(JSON.stringify(formulaTreeResolver._findSymbolArray("IF#"), null, null));
 //     formulaTreeResolver.resolve("1 + 2 > 0");
