@@ -16,12 +16,12 @@ var Logger = {
         var styleStr = "", template;
         if ($.isPlainObject(style)) {
             $.each(style, function (key, value) {
-                styleStr += key + ":" + value + ";"
+                styleStr += key + ":" + value + ";";
             });
         }
 
-        text = $('<div/>').text(text).html()
-        template = '<li style="<%= style%>"><pre><%= content%></pre></li>'
+        text = $('<div/>').text(text).html();
+        template = '<li style="<%= style%>"><pre><%= content%></pre></li>';
 
         $("#main").append(_.template(template, {style: styleStr, content: text}));
     },
@@ -53,7 +53,7 @@ var Logger = {
             "padding": "10px 10px"
         });
     }
-}
+};
 
 //<editor-fold desc="基本解析器">
 var logicResolver = {
@@ -193,7 +193,7 @@ var textResolver = $.extend(true, {}, ISymbolResolver, {
      * @returns {(null | string)} 公式
      */
     convert2Formula: function (formulaVo) {
-        return formulaVo.text
+        return formulaVo.text;
     },
 
     /**
@@ -431,7 +431,7 @@ var subjectResolver = $.extend(true, {}, ISymbolResolver, {
         }
         //endregion
 
-        result += subjectStr
+        result += subjectStr;
 
         // 2.反解析【是否重分类】
         if ($.trim(subjectFormulaVo.reClassify) !== "") {
@@ -756,7 +756,7 @@ var commonWorldResolver = $.extend(true, {}, ISymbolResolver, {
  */
 var sheetResolver = $.extend(true, {}, ISymbolResolver, {
     getRegex: function () {
-        return /<([A-Za-z]+\d+)>/g
+        return /<([A-Za-z]+\d+)>/g;
     },
 
     /**
@@ -821,7 +821,7 @@ var sheetResolver = $.extend(true, {}, ISymbolResolver, {
  */
 var sumResolver = $.extend(true, {}, ISymbolResolver, {
     getRegex: function () {
-        return /SUM\(<([^)]+)>:<([^)]+)>\)/g
+        return /SUM\(<([^)]+)>:<([^)]+)>\)/g;
     },
 
     /**
@@ -1491,7 +1491,7 @@ $.extend(formulaTreeResolver, {
         index = String(matchingText).indexOf(symbolValue.TERMINATOR);
 
         if (index >= 0) {
-            beforeContext = String(matchingText).substring(0, index)
+            beforeContext = String(matchingText).substring(0, index);
             mappingItem = {
                 symbol: symbol,
                 beforeContext: beforeContext,
@@ -1719,12 +1719,12 @@ $.extend(formulaTreeResolver, {
             if (_.size(formulaNode.children) === 0) {
                 resolver = self._getSymbolResolver(type);
                 if (resolver) {
-                    html += resolver.convert2Html(formulaNode.formulaVo)
+                    html += resolver.convert2Html(formulaNode.formulaVo);
                 } else if (type === "OPERATOR") {
                     html += _.template('<span class="formula formula_operator"><%= text%></span>', {text: formulaNode.formula});
                 }
             } else {
-                html += "<span>" + self.renderHtml(formulaNode.children) + "</span>"
+                html += "<span>" + self.renderHtml(formulaNode.children) + "</span>";
             }
         });
         return html;
@@ -1930,30 +1930,26 @@ $.extend(formulaTreeResolver, {
          // 1.6.测试 【求和(SUM)】公式
          Logger.info(" 1.6.测试 【求和(SUM)】公式");
          formulaTreeResolver.resolve("SUM(<C1>:<C2>)");
-
-
-*/
     // 1.7.测试 【条件(IF)】公式
     Logger.info(" 1.7.测试【条件(IF)】公式");
 
-//     formulaTreeResolver.resolve("IF#(1+2>0,true,false)#IF");
-//     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
-//     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
+    formulaTreeResolver.resolve("IF#(1+2>0,true,false)#IF");
+    formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
+    formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
     formulaTreeResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
+*/
 
 
-    /*
-           // 1.8.测试 【组(Group)】公式
-           Logger.info(" 1.8.测试 【组(Group)】公式");
-           formulaTreeResolver.resolve("(1+2)");
-       */
+       // 1.8.测试 【组(Group)】公式
+       Logger.info(" 1.8.测试 【组(Group)】公式");
+       formulaTreeResolver.resolve("(1+2)");
 
     //</editor-fold>
     //<editor-fold desc="2.测试组和公式">
     /*
     // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
     Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
-//     formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
+    formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
     formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>}");
 */
     // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
