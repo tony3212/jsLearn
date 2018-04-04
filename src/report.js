@@ -1601,7 +1601,7 @@ $.extend(formulaTreeResolver, {
 
                 // 2.1找出父节点
                 parentNode = self._getParentFormulaNode(resolvingSymbolArray);
-                emptyTextNode = $.trim(beforeContext) !== "" ? self._createTextFormulaNode(beforeContext) : null;
+                emptyTextNode = $.beforeContext !== "" ? self._createTextFormulaNode(beforeContext) : null;
                 // 2.2添加普通文本公式
                 self._addFormulaNode(emptyTextNode, parentNode, formulaTree);
 
@@ -1938,7 +1938,8 @@ $.extend(formulaTreeResolver, {
 
 //     formulaTreeResolver.resolve("IF#(1+2>0,true,false)#IF");
 //     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
-    formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
+//     formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
+    formulaTreeResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
 
 
     /*
