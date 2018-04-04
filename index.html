@@ -7,14 +7,17 @@
     <style>
 
         .formula {
-            border: 3px solid hsla(0,0%,100%,.5); background: white;
-            background-clip: padding-box;
+            border: 1px solid hsla(0,0%,100%,.5);
+            background: transparent;
             line-height: 30px;
-            padding: 2px 5px;
+            text-align: center;
+            vertical-align: middle;
+            padding: 2px 2px;
         }
 
         .formula_text {
-            background: #C71585;
+            background: inherit;
+            border: none;
         }
 
         .formula_subject {
@@ -37,6 +40,21 @@
             background: #4169E1
         }
 
+        .formula_if {
+            border: 2px solid #F6EBE5;
+            padding: 2px 1px;
+            background: #CCFF99;
+            color: #003399;
+            display: inline-block;
+        }
+
+        .formula_if_condition, .formula_if_truevalue, .formula_if_falsevalue {
+            border: 1px dashed #6666FF;
+        }
+
+        .formula_if_separator {
+            padding-right: 5px;
+        }
 
 
         pre {
