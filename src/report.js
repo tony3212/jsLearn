@@ -1,4 +1,4 @@
-(function (root) {
+(function (root, $, _) {
     var Logger = {
         LEVEL: {
             TRACE: 0,
@@ -638,7 +638,7 @@
          */
         convert2Formula: function (formulaVo) {
             if (formulaVo != null) {
-                return _.template("{<%= reportCode %>!<<%= position %>>}", formulaVo);
+                return _.template("{<%= reportCode %>!<<%= position %>>}")(formulaVo);
             }
             return null;
         },
@@ -729,7 +729,7 @@
          */
         convert2Formula: function (formulaVo) {
             if (formulaVo != null) {
-                return _.template("#<%= name %>#", formulaVo);
+                return _.template("#<%= name %>#")(formulaVo);
             }
             return null;
         },
@@ -794,7 +794,7 @@
          */
         convert2Formula: function (formulaVo) {
             if (formulaVo != null) {
-                return _.template("<<%= position %>>", formulaVo);
+                return _.template("<<%= position %>>")(formulaVo);
             }
             return null;
         },
@@ -859,7 +859,7 @@
          */
         convert2Formula: function (formulaVo) {
             if (formulaVo != null) {
-                return _.template("SUM(<<%= startPosition %>>:<<%= endPosition %>>", formulaVo);
+                return _.template("SUM(<<%= startPosition %>>:<<%= endPosition %>>")(formulaVo);
             }
             return null;
         },
@@ -934,7 +934,7 @@
          */
         convert2Formula: function (formulaVo) {
             if (formulaVo != null) {
-                return _.template("IF#(<%= condition %>,<%= trueValue %>,<%= falseValue%>)#IF", formulaVo);
+                return _.template("IF#(<%= condition %>,<%= trueValue %>,<%= falseValue%>)#IF")(formulaVo);
             }
             return null;
         },
@@ -1082,7 +1082,7 @@
         /**
          * 设置孩子节点
          * @param {FormulaNode} parentNode 父节点
-         * @param {FormulaNode} children 孩子节点
+         * @param {[FormulaNode]} children 孩子节点
          * @private
          */
         _setFormulaChildren: function (parentNode, children) {
@@ -1784,6 +1784,6 @@
     formulaTreeResolver.sheetResolver = sheetResolver;
     formulaTreeResolver.sumResolver = sumResolver;
     formulaTreeResolver.ifResolver = ifResolver;
-})(window, $, _);
+})(window, jQuery, _);
 
 
