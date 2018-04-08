@@ -888,7 +888,11 @@ var ifResolver = $.extend(true, {}, ISymbolResolver, {
     resolveVoField: ["condition", "trueValue", "falseValue"],
 
     getRegex: function () {
-        return /IF#\(((?:[^(),]+|\([^)]+,[^)]+\))+),((?:[^(),]+|\([^)]+,[^)]+\))+),((?:[^(),]+|\([^)]+,[^)]+\))+)\)#IF/g;
+        // (?:(?:[^(),]+)匹配没有括号也没有逗号的字符串
+        // (?:\[(?:[^\]]|,)+])匹配中括号里有逗号的情况，例如 [K1001,^S0^G20^Y:0^M:0^E0])
+        // (?:\((?:[^\]]|,)+\)))+)匹配小括号里有逗号的情况(<C1>,<C2>)
+        // 整个解释就是匹配IF#(没有括号也没有逗号+中括号里有逗号的情况+小括号里有逗号的情况,同前,同前)#IF
+        return /IF#\(((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+)\)#IF/g;
     },
 
     /**
@@ -2072,7 +2076,7 @@ $.extend(formulaTreeResolver, {
    testFormulaRender(complexRenderTitle2, complexRenderFormula2, complexRenderResult2);
 
    var complexRenderTitle3 = "测试混合公式之IF的渲染"
-   var complexRenderFormula3 = "IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF";
+   var complexRenderFormula3 = "IF#(<E14>*<E15>>0,SUM(<C3>:<C13>), IF#(4 + 5 > 6, 1, 0)#IF)#IF";
    var complexRenderResult3 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula3));
    testFormulaRender(complexRenderTitle3, complexRenderFormula3, complexRenderResult3);
 
@@ -2080,6 +2084,11 @@ $.extend(formulaTreeResolver, {
    var complexRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
    var complexRenderResult4 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula4));
    testFormulaRender(complexRenderTitle4, complexRenderFormula4, complexRenderResult4);
+
+   var complexRenderTitle5 = "测试混合公式之IF的渲染"
+   var complexRenderFormula5 = "IF#(1 + 2 > 3, 4, [K1001,^S0^G20^Y:0^M:0^E0])#IF + IF#(6 + 7 > 8, 9, 10)#IF";
+   var complexRenderResult5 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula5));
+   testFormulaRender(complexRenderTitle5, complexRenderFormula5, complexRenderResult5);
 
    //</editor-fold>
 
