@@ -611,9 +611,9 @@
          *  convert2Vo('{FSTM_JS0102!<B3>}')
          *  =>
          *  {
-     *      reportCode: 'FSTM_JS0102',
-     *      position: 'B3'
-     *  }
+         *      reportCode: 'FSTM_JS0102',
+         *      position: 'B3'
+         *  }
          */
         convert2Vo: function (formula) {
             var self = this, matchResult;
@@ -986,10 +986,10 @@
      *
      * @typedef {Object.<string, SymbolValue>} Symbol 公式元素
      */
-    var formulaTreeResolver = root.formulaTreeResolver = {};
+    var formulaResolver = root.formulaResolver = {};
 
 //<editor-fold desc="公式节点相关操作">
-    $.extend(formulaTreeResolver, {
+    $.extend(formulaResolver, {
         /**
          * 创建文本节点
          * @param text 普通文本
@@ -1129,7 +1129,7 @@
     });
 //</editor-fold>
 
-    $.extend(formulaTreeResolver, {
+    $.extend(formulaResolver, {
         /** 初始化是否完成 */
         initialComplete: false,
 
@@ -1775,15 +1775,13 @@
         }
     });
 
-    formulaTreeResolver.Logger = Logger;
-    formulaTreeResolver.logicResolver = logicResolver;
-    formulaTreeResolver.textResolver = textResolver;
-    formulaTreeResolver.subjectResolver = subjectResolver;
-    formulaTreeResolver.mSheetResolver = mSheetResolver;
-    formulaTreeResolver.commonWorldResolver = commonWorldResolver;
-    formulaTreeResolver.sheetResolver = sheetResolver;
-    formulaTreeResolver.sumResolver = sumResolver;
-    formulaTreeResolver.ifResolver = ifResolver;
+    formulaResolver.Logger = Logger;
+    formulaResolver.logicResolver = logicResolver;
+    formulaResolver.textResolver = textResolver;
+    formulaResolver.subjectResolver = subjectResolver;
+    formulaResolver.mSheetResolver = mSheetResolver;
+    formulaResolver.commonWorldResolver = commonWorldResolver;
+    formulaResolver.sheetResolver = sheetResolver;
+    formulaResolver.sumResolver = sumResolver;
+    formulaResolver.ifResolver = ifResolver;
 })(window, jQuery, _);
-
-

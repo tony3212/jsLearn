@@ -1,5 +1,5 @@
 module.exports = {
-    entry: __dirname + '/src/report.js',
+    entry: __dirname + '/src/formulaResolver.js',
     output: {
         path: __dirname + '/dist',
         publicPath: '/dist/',

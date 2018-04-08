@@ -1,8 +1,8 @@
 // 测试
 (function () {
 
-    var R = formulaTreeResolver;
-    var Logger = formulaTreeResolver.Logger;
+    var R = formulaResolver;
+    var Logger = formulaResolver.Logger;
 
     //<editor-fold desc="测试解析器">
     /*
@@ -164,11 +164,11 @@
 
 
     //<editor-fold desc="测试复杂公式">
-    formulaTreeResolver.resolve(" abc3#corpName#");
-    formulaTreeResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
-    formulaTreeResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-    formulaTreeResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-    formulaTreeResolver.resolve("{13_01!<C41>}");
+    formulaResolver.resolve(" abc3#corpName#");
+    formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
+    formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+    formulaResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+    formulaResolver.resolve("{13_01!<C41>}");
     //</editor-fold>
 
     //<editor-fold desc="1.测试单个公式">
@@ -176,42 +176,42 @@
         Logger.caption("测试解析树")
         // 1.1.测试普通文本
         Logger.info("1.1.测试普通文本");
-        formulaTreeResolver.resolve("abc");
+        formulaResolver.resolve("abc");
         // 1.2.测试【会计科目】公式
         Logger.info("1.2.测试【会计科目】公式");
-        formulaTreeResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
+        formulaResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
          // 1.3.测试【表间取值】公式
          Logger.info("1.3.测试【表间取值】公式");
-         formulaTreeResolver.resolve("{FSTM_JS0102!<B3>}");
+         formulaResolver.resolve("{FSTM_JS0102!<B3>}");
 
          // 1.4.测试【常用字(其它)】公式
          Logger.info("1.4.测试【常用字(其它)】公式");
-         formulaTreeResolver.resolve("#queryTIN#");
+         formulaResolver.resolve("#queryTIN#");
 
          // 1.5.测试 【单元格】公式
          Logger.info("1.5.测试 【单元格】公式");
-         formulaTreeResolver.resolve("<C3>");
+         formulaResolver.resolve("<C3>");
 
          // 1.6.测试 【求和(SUM)】公式
          Logger.info(" 1.6.测试 【求和(SUM)】公式");
-         formulaTreeResolver.resolve("SUM(<C1>:<C2>)");
+         formulaResolver.resolve("SUM(<C1>:<C2>)");
     // 1.7.测试 【条件(IF)】公式
     Logger.info(" 1.7.测试【条件(IF)】公式");
 
-    formulaTreeResolver.resolve("IF#(1+2>0,true,false)#IF");
-    formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
-    formulaTreeResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
-    formulaTreeResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
+    formulaResolver.resolve("IF#(1+2>0,true,false)#IF");
+    formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
+    formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
+    formulaResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
 
        // 1.8.测试 【组(Group)】公式
        Logger.info(" 1.8.测试 【组(Group)】公式");
-       formulaTreeResolver.resolve("(1+2)");
+       formulaResolver.resolve("(1+2)");
     //</editor-fold>
     //<editor-fold desc="2.测试组和公式">
     // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
     Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
-    formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
-    formulaTreeResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>}");
+    formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
+    formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>}");
     // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
     // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
@@ -280,37 +280,37 @@
     // 7.1 测试四则运算
     var complexRenderTitle = "测试混合公式的渲染"
     var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
-    var complexRenderResult = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula));
+    var complexRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula));
     testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
 
     // 7.2测试if运算
     var complexRenderTitle1 = "测试混合公式之IF的渲染"
     var complexRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
-    var complexRenderResult1 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula1));
+    var complexRenderResult1 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula1));
     testFormulaRender(complexRenderTitle1, complexRenderFormula1, complexRenderResult1);
 
     var complexRenderTitle2 = "测试混合公式之IF的渲染"
     var complexRenderFormula2 = "IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF";
-    var complexRenderResult2 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula2));
+    var complexRenderResult2 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula2));
     testFormulaRender(complexRenderTitle2, complexRenderFormula2, complexRenderResult2);
 
     var complexRenderTitle3 = "测试混合公式之IF的渲染"
     var complexRenderFormula3 = "IF#(<E14>*<E15>>0,SUM(<C3>:<C13>), IF#(4 + 5 > 6, 1, 0)#IF)#IF";
-    var complexRenderResult3 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula3));
+    var complexRenderResult3 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula3));
     testFormulaRender(complexRenderTitle3, complexRenderFormula3, complexRenderResult3);
 
     var complexRenderTitle4 = "测试混合公式之IF的渲染"
     var complexRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
-    var complexRenderResult4 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula4));
+    var complexRenderResult4 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula4));
     testFormulaRender(complexRenderTitle4, complexRenderFormula4, complexRenderResult4);
 
     var complexRenderTitle5 = "测试混合公式之IF的渲染"
     var complexRenderFormula5 = "IF#(1 + 2 > 3, 4, [K1001,^S0^G20^Y:0^M:0^E0])#IF + IF#(6 + 7 > 8, 9, 10)#IF";
-    var complexRenderResult5 = formulaTreeResolver.renderHtml(formulaTreeResolver.resolve(complexRenderFormula5));
+    var complexRenderResult5 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula5));
     testFormulaRender(complexRenderTitle5, complexRenderFormula5, complexRenderResult5);
     //</editor-fold>
 
-//     Logger.info(JSON.stringify(formulaTreeResolver._findSymbolArray("IF#"), null, null));
-//     formulaTreeResolver.resolve("1 + 2 > 0");
+//     Logger.info(JSON.stringify(formulaResolver._findSymbolArray("IF#"), null, null));
+//     formulaResolver.resolve("1 + 2 > 0");
 
-})(formulaTreeResolver);
+})(formulaResolver);
