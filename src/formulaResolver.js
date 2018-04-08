@@ -285,9 +285,9 @@
          *  convert2Vo('{FSTM_JS0102!<B3>}')
          *  =>
          *  {
-     *      reportCode: 'FSTM_JS0102',
-     *      position: 'B3'
-     *  }
+         *      reportCode: 'FSTM_JS0102',
+         *      position: 'B3'
+         *  }
          */
         convert2Vo: function (subjectFormula) {
             var self = this;
@@ -1125,7 +1125,7 @@
             }
 
             return treeNode;
-        },
+        }
     });
 //</editor-fold>
 
@@ -1162,7 +1162,7 @@
             M_SHEET: {
                 STARTER: "{",
                 TERMINATOR: "}",
-                LEAF: true,
+                LEAF: true
             },
 
             // 【常用字(其它)】起始、结束符
