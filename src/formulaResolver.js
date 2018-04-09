@@ -7,7 +7,10 @@
             ERROR: 3
         },
 
-        level: 0,
+        level: 3,
+
+        // 当需要打印在页面时，配置此参数（jQuery选择器，e.g.： #main）
+        $logBox: null,
 
         log: function (level, text, style) {
             if (level < this.level) {
@@ -22,9 +25,13 @@
             }
 
             text = $('<div/>').text(text).html();
-            template = '<li style="<%= style%>"><pre><%= content%></pre></li>';
+            template = '<li style="<%= style %>"><pre><%= content%></pre></li>';
 
-            $("#main").append(_.template(template, {style: styleStr, content: text}));
+            var $item = $(_.template(template, {style: styleStr, content: text}));
+            if (this.$logBox) {
+                $(this.$logBox).append($item);
+            }
+            window.console && window.console.log("%c" + $item.text(), $item.attr("style"));
         },
 
         trace: function (text) {
@@ -264,7 +271,7 @@
         },
 
         getRegex: function () {
-            return /\[K((?:[^^,()]+,)+)(?:\(([^)]+)\))*.+]/g;
+            return /\[K((?:[^^,()]+,)+)(?:\(([^)]+)\))*[^\[\]]+]/g;
         },
 
         /**
@@ -495,7 +502,7 @@
             var defaultTemplate = '';
 
             defaultTemplate += '<span class="formula formula_subject">';
-            defaultTemplate += '    K(<%= subjectCodeList %>|<%= reClassify %>|<%= valueTypeCode %>|<%= reClassify %>)';
+            defaultTemplate += '    K(<%= subjectCodeList %>|<%= valueTypeCode %>|<%= reClassify %>)';
             defaultTemplate += '</span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
@@ -1585,6 +1592,10 @@
 
             Logger.separate("");
             Logger.caption("formula is: " + formula);
+
+            if (formula == null || formula.length === 0) {
+                return null;
+            }
 
             var lastResolvingIndex = -1,
                 operateResult, symbol, symbolName, symbolValue,
