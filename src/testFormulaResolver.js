@@ -4,11 +4,11 @@
     var R = formulaResolver;
     var Logger = formulaResolver.Logger;
 
-    Logger.level = 0;
+    Logger.level = 3;
     Logger.$logBox = $("#main");
 
     //<editor-fold desc="测试解析器">
-    /**/
+    /*
     // =================================================================================
     Logger.separate();
     Logger.info("1.测试【普通文本】解析器");
@@ -163,18 +163,22 @@
     };
     Logger.info("ifFormulaVo is: " + JSON.stringify(ifFormulaVo, null, "\t"));
     Logger.warn("result is: " + R.ifResolver.convert2Formula(ifFormulaVo), null, "\t");
+    */
     //</editor-fold>
 
 
     //<editor-fold desc="测试复杂公式">
+   /*
     formulaResolver.resolve(" abc3#corpName#");
     formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
     formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
     formulaResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
     formulaResolver.resolve("{13_01!<C41>}");
+    */
     //</editor-fold>
 
     //<editor-fold desc="1.测试单个公式">
+   /*
     Logger.separate();
     Logger.caption("测试解析树");
     // 1.1.测试普通文本
@@ -219,7 +223,7 @@
 
     // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
 
-
+*/
     //</editor-fold>
 
     //<editor-fold desc="测试渲染文本">
@@ -243,7 +247,7 @@
         })));
     }
 
-    /*
+    /**/
        // 1.测试【普通文本】渲染
        var textRenderTitle = "测试【普通文本】渲染"
        var textRenderFormula = "abc";
@@ -316,7 +320,7 @@
     var complexRenderFormula6 = "<G25>+<G26>+<G27>+<G28>";
     var complexRenderResult6 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula6));
     testFormulaRender(complexRenderTitle6, complexRenderFormula6, complexRenderResult6);
-   */
+
     //</editor-fold>
 
 //     Logger.info(JSON.stringify(formulaResolver._findSymbolArray("IF#"), null, null));
