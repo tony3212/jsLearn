@@ -5,19 +5,23 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>ES6 Boilerplate</title>
     <style>
-
         .formula {
             border: 2px solid hsla(0,0%,100%,.5);
+            border-bottom: 0;
+            border-top: 0;
+            background: white;
             background-clip: padding-box;
             line-height: 20px;
             text-align: center;
             vertical-align: middle;
             color: #2F4F4F;
+            display: inline;
         }
-
         .formula_text {
             background: inherit;
             border: none;
+            white-space: pre;
+            line-height: 23px;
         }
 
         .formula_subject {
@@ -33,7 +37,7 @@
         }
 
         .formula_sheet {
-            background: #CCCCFF
+            background: #CCCCFF;
         }
 
         .formula_sum {
@@ -42,19 +46,35 @@
 
         .formula_if {
             border: 2px solid #F6EBE5;
-            padding: 1px 1px;
             background: #FFFFE0;
             color: #003399;
-            display: inline-block;
         }
 
         .formula_if_condition, .formula_if_truevalue, .formula_if_falsevalue {
             border: 1px dashed #6666FF;
-            display: inline-block;
+            padding-bottom: 1px;
         }
 
         .formula_if_separator {
             padding-right: 5px;
+            padding-left: 5px;
+            color: purple;
+            font-size: 14px;
+        }
+
+        .formula_if em{
+            vertical-align: middle;
+            font-size: 14px;
+            line-height: 25px;
+            color: purple;
+        }
+
+        .formula_group:before {
+            content:"(";
+        }
+
+        .formula_group:after {
+            content:")";
         }
 
 
@@ -96,5 +116,6 @@
     <script type="text/javascript" src="lib/underscore.js"></script>
     <script type="text/javascript" src="dist/bundle.js"></script>
     <script type="text/javascript" src="src/testFormulaResolver.js"></script>
+
 </body>
 </html>

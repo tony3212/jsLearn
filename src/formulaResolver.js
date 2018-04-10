@@ -900,7 +900,7 @@
             // (?:\[(?:[^\]]|,)+])匹配中括号里有逗号的情况，例如 [K1001,^S0^G20^Y:0^M:0^E0])
             // (?:\((?:[^\]]|,)+\)))+)匹配小括号里有逗号的情况(<C1>,<C2>)
             // 整个解释就是匹配IF#(没有括号也没有逗号+中括号里有逗号的情况+小括号里有逗号的情况,同前,同前)#IF
-            return /IF#\(((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^\]]|,)+\)))+)\)#IF/g;
+            return /IF#\(((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^)]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^)]|,)+\)))+),((?:(?:[^(),]+)|(?:\[(?:[^\]]|,)+])|(?:\((?:[^)]|,)+\)))+)\)#IF/g;
         },
 
         /**
@@ -962,11 +962,11 @@
             trueHtml = renderCallback.apply(renderContext, [children[1]]);
             falseHtml = renderCallback.apply(renderContext, [children[2]]);
             defaultTemplate += '<span  class="formula formula_if">';
-            defaultTemplate += 'IF(';
+            defaultTemplate += '<em>IF(</em>';
             defaultTemplate += '<%= conditionHtml %><span class="formula_if_separator">,</span>';
             defaultTemplate += '<%= trueHtml %><span class="formula_if_separator">,</span>';
             defaultTemplate += '<%= falseHtml %>';
-            defaultTemplate += ')';
+            defaultTemplate += '<em>)</em>';
             defaultTemplate += '</span>';
             template || (template = defaultTemplate);
             return String(_.template(template, $.extend(true, {}, formulaVo, {
@@ -1730,6 +1730,7 @@
                         emptyTextNode = $.trim(beforeContext) !== "" ? self._createTextFormulaNode(beforeContext) : null;
                         self._addFormulaNode(emptyTextNode, parentNode, formulaTree);
                     }
+                    resolvingSymbolArray.pop();
                     matchingText = "";
                     lastResolvingIndex = i;
                 }

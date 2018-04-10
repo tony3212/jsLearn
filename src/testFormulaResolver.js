@@ -4,7 +4,7 @@
     var R = formulaResolver;
     var Logger = formulaResolver.Logger;
 
-    Logger.level = 3;
+    Logger.level = 4;
     Logger.$logBox = $("#main");
 
     //<editor-fold desc="测试解析器">
@@ -168,62 +168,62 @@
 
 
     //<editor-fold desc="测试复杂公式">
-   /*
-    formulaResolver.resolve(" abc3#corpName#");
-    formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
-    formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-    formulaResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
-    formulaResolver.resolve("{13_01!<C41>}");
-    */
+    /*
+     formulaResolver.resolve(" abc3#corpName#");
+     formulaResolver.resolve("[K1001,1002,^S1^G20^Y:3^M:1^E0]+#queryBeginPeriod#+[K1604,1605,^S1^G20^Y2010:3^M6:1^E0]");
+     formulaResolver.resolve("#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+     formulaResolver.resolve(" abc3#corpName# + [K1001,^S0^G20^Y:0^M:0^E0] + ({11_01!<C3>})");
+     formulaResolver.resolve("{13_01!<C41>}");
+     */
     //</editor-fold>
 
     //<editor-fold desc="1.测试单个公式">
-   /*
-    Logger.separate();
-    Logger.caption("测试解析树");
-    // 1.1.测试普通文本
-    Logger.info("1.1.测试普通文本");
-    formulaResolver.resolve("abc");
-    // 1.2.测试【会计科目】公式
-    Logger.info("1.2.测试【会计科目】公式");
-    formulaResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
-    // 1.3.测试【表间取值】公式
-    Logger.info("1.3.测试【表间取值】公式");
-    formulaResolver.resolve("{FSTM_JS0102!<B3>}");
+    /*
+     Logger.separate();
+     Logger.caption("测试解析树");
+     // 1.1.测试普通文本
+     Logger.info("1.1.测试普通文本");
+     formulaResolver.resolve("abc");
+     // 1.2.测试【会计科目】公式
+     Logger.info("1.2.测试【会计科目】公式");
+     formulaResolver.resolve("[K100101,^S1^G20^Y:0^M:0^E0]");
+     // 1.3.测试【表间取值】公式
+     Logger.info("1.3.测试【表间取值】公式");
+     formulaResolver.resolve("{FSTM_JS0102!<B3>}");
 
-    // 1.4.测试【常用字(其它)】公式
-    Logger.info("1.4.测试【常用字(其它)】公式");
-    formulaResolver.resolve("#queryTIN#");
+     // 1.4.测试【常用字(其它)】公式
+     Logger.info("1.4.测试【常用字(其它)】公式");
+     formulaResolver.resolve("#queryTIN#");
 
-    // 1.5.测试 【单元格】公式
-    Logger.info("1.5.测试 【单元格】公式");
-    formulaResolver.resolve("<C3>");
+     // 1.5.测试 【单元格】公式
+     Logger.info("1.5.测试 【单元格】公式");
+     formulaResolver.resolve("<C3>");
 
-    // 1.6.测试 【求和(SUM)】公式
-    Logger.info(" 1.6.测试 【求和(SUM)】公式");
-    formulaResolver.resolve("SUM(<C1>:<C2>)");
-    // 1.7.测试 【条件(IF)】公式
-    Logger.info(" 1.7.测试【条件(IF)】公式");
+     // 1.6.测试 【求和(SUM)】公式
+     Logger.info(" 1.6.测试 【求和(SUM)】公式");
+     formulaResolver.resolve("SUM(<C1>:<C2>)");
+     // 1.7.测试 【条件(IF)】公式
+     Logger.info(" 1.7.测试【条件(IF)】公式");
 
-    formulaResolver.resolve("IF#(1+2>0,true,false)#IF");
-    formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
-    formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
-    formulaResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
+     formulaResolver.resolve("IF#(1+2>0,true,false)#IF");
+     formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF");
+     formulaResolver.resolve("IF#(<E14>*<E15>>0,<E14>*<E15>, IF#(4 + 5 > 6, 1, 0)#IF)#IF");
+     formulaResolver.resolve("IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF");
 
-    // 1.8.测试 【组(Group)】公式
-    Logger.info(" 1.8.测试 【组(Group)】公式");
-    formulaResolver.resolve("(1+2)");
-    //</editor-fold>
-    //<editor-fold desc="2.测试组和公式">
-    // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
-    Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
-    formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
-    formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>}");
-    // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
+     // 1.8.测试 【组(Group)】公式
+     Logger.info(" 1.8.测试 【组(Group)】公式");
+     formulaResolver.resolve("(1+2)");
+     //</editor-fold>
+     //<editor-fold desc="2.测试组和公式">
+     // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
+     Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
+     formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
+     formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>}");
+     // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
-    // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
+     // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
 
-*/
+ */
     //</editor-fold>
 
     //<editor-fold desc="测试渲染文本">
@@ -248,78 +248,91 @@
     }
 
     /**/
-       // 1.测试【普通文本】渲染
-       var textRenderTitle = "测试【普通文本】渲染"
-       var textRenderFormula = "abc";
-       var textRenderResult = R.textResolver.convert2Html(R.textResolver.convert2Vo(textRenderFormula));
-       testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
+    // 1.测试【普通文本】渲染
+    var textRenderTitle = "测试【普通文本】渲染";
+    var textRenderFormula = "abc";
+    var textRenderResult = R.textResolver.convert2Html(R.textResolver.convert2Vo(textRenderFormula));
+    testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
 
-       // 2.测试【会计科目】渲染
-       var subjectRenderTitle = "测试【会计科目】渲染"
-       var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
-       var subjectRenderResult = R.subjectResolver.convert2Html(R.subjectResolver.convert2Vo(subjectRenderFormula));
-       testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
+    // 2.测试【会计科目】渲染
+    var subjectRenderTitle = "测试【会计科目】渲染";
+    var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
+    var subjectRenderResult = R.subjectResolver.convert2Html(R.subjectResolver.convert2Vo(subjectRenderFormula));
+    testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
 
-       // 3.测试【表间取值】渲染
-       var mSheetRenderTitle = "测试【表间取值】渲染"
-       var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
-       var mSheetRenderResult = R.mSheetResolver.convert2Html(R.mSheetResolver.convert2Vo(mSheetRenderFormula));
-       testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
+    // 3.测试【表间取值】渲染
+    var mSheetRenderTitle = "测试【表间取值】渲染";
+    var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
+    var mSheetRenderResult = R.mSheetResolver.convert2Html(R.mSheetResolver.convert2Vo(mSheetRenderFormula));
+    testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
 
-       // 4.测试【常用字(其它)】渲染
-       var commonWorldRenderTitle = "测试【常用字(其它)】渲染"
-       var commonWorldRenderFormula = "#queryTIN#";
-       var commonWorldRenderResult = R.commonWorldResolver.convert2Html(R.commonWorldResolver.convert2Vo(commonWorldRenderFormula));
-       testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
+    // 4.测试【常用字(其它)】渲染
+    var commonWorldRenderTitle = "测试【常用字(其它)】渲染";
+    var commonWorldRenderFormula = "#queryTIN#";
+    var commonWorldRenderResult = R.commonWorldResolver.convert2Html(R.commonWorldResolver.convert2Vo(commonWorldRenderFormula));
+    testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
 
-       // 5.测试【单元格】渲染
-       var sheetRenderTitle = "测试【单元格】渲染"
-       var sheetRenderFormula = "<C3>";
-       var sheetRenderResult = R.sheetResolver.convert2Html(R.sheetResolver.convert2Vo(sheetRenderFormula));
-       testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
+    // 5.测试【单元格】渲染
+    var sheetRenderTitle = "测试【单元格】渲染";
+    var sheetRenderFormula = "<C3>";
+    var sheetRenderResult = R.sheetResolver.convert2Html(R.sheetResolver.convert2Vo(sheetRenderFormula));
+    testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
 
-       // 6.测试【求和(SUM)】渲染
-       var sumRenderTitle = "测试【求和(SUM)】渲染"
-       var sumRenderFormula = "SUM(<C1>:<C2>)";
-       var sumRenderResult = R.sumResolver.convert2Html(R.sumResolver.convert2Vo(sumRenderFormula));
-       testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
+    // 6.测试【求和(SUM)】渲染
+    var sumRenderTitle = "测试【求和(SUM)】渲染";
+    var sumRenderFormula = "SUM(<C1>:<C2>)";
+    var sumRenderResult = R.sumResolver.convert2Html(R.sumResolver.convert2Vo(sumRenderFormula));
+    testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
 
     // 7.测试混合公式的渲染
     // 7.1 测试四则运算
-    var complexRenderTitle = "测试混合公式的渲染"
+    var complexRenderTitle = "测试混合公式的渲染";
     var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
     var complexRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula));
     testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
 
     // 7.2测试if运算
-    var complexRenderTitle1 = "测试混合公式之IF的渲染"
+    var complexRenderTitle1 = "测试混合公式之IF的渲染";
     var complexRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
     var complexRenderResult1 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula1));
     testFormulaRender(complexRenderTitle1, complexRenderFormula1, complexRenderResult1);
 
-    var complexRenderTitle2 = "测试混合公式之IF的渲染"
+    var complexRenderTitle2 = "测试混合公式之IF的渲染";
     var complexRenderFormula2 = "IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF";
     var complexRenderResult2 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula2));
     testFormulaRender(complexRenderTitle2, complexRenderFormula2, complexRenderResult2);
 
-    var complexRenderTitle3 = "测试混合公式之IF的渲染"
+    var complexRenderTitle3 = "测试混合公式之IF的渲染";
     var complexRenderFormula3 = "IF#(<E14>*<E15>>0,SUM(<C3>:<C13>), IF#(4 + 5 > 6, 1, 0)#IF)#IF";
     var complexRenderResult3 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula3));
     testFormulaRender(complexRenderTitle3, complexRenderFormula3, complexRenderResult3);
 
-    var complexRenderTitle4 = "测试混合公式之IF的渲染"
+    var complexRenderTitle4 = "测试混合公式之IF的渲染";
     var complexRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
     var complexRenderResult4 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula4));
     testFormulaRender(complexRenderTitle4, complexRenderFormula4, complexRenderResult4);
 
-    var complexRenderTitle5 = "测试混合公式之IF的渲染"
+    var complexRenderTitle5 = "测试混合公式之IF的渲染";
     var complexRenderFormula5 = "IF#(1 + 2 > 3, 4, [K1001,^S0^G20^Y:0^M:0^E0])#IF + IF#(6 + 7 > 8, 9, 10)#IF";
     var complexRenderResult5 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula5));
     testFormulaRender(complexRenderTitle5, complexRenderFormula5, complexRenderResult5);
-    var complexRenderTitle6 = "测试混合公式之表单单元格相加的渲染";
-    var complexRenderFormula6 = "<G25>+<G26>+<G27>+<G28>";
+
+    var complexRenderTitle6 = "测试混合公式之IF的渲染";
+    var complexRenderFormula6 = "IF#(({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0,-({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>}),0.00)#IF";
     var complexRenderResult6 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula6));
     testFormulaRender(complexRenderTitle6, complexRenderFormula6, complexRenderResult6);
+
+    // 9 测试混合公式之表单单元格相加的渲染
+    var complexRenderTitle7 = "测试混合公式之表单单元格相加的渲染";
+    var complexRenderFormula7 = "<G25>+<G26>+<G27>+<G28>";
+    var complexRenderResult7 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula7));
+    testFormulaRender(complexRenderTitle7, complexRenderFormula7, complexRenderResult7);
+
+    // 9 测试混合公式之表单单元格相加的渲染
+    var complexRenderTitle8 = "测试混合公式之表单单元格相加的渲染";
+    var complexRenderFormula8 = "({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0";
+    var complexRenderResult8= formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula8));
+    testFormulaRender(complexRenderTitle8, complexRenderFormula8, complexRenderResult8);
 
     //</editor-fold>
 
