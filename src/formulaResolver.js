@@ -501,9 +501,7 @@
         convert2Html: function (formulaVo, template) {
             var defaultTemplate = '';
 
-            defaultTemplate += '<span class="formula formula_subject">';
-            defaultTemplate += '    K(<%= subjectCodeList %>|<%= valueTypeCode %>|<%= reClassify %>)';
-            defaultTemplate += '</span>';
+            defaultTemplate += '<span class="formula formula_subject">K(<%= subjectCodeList %>|<%= valueTypeCode %>|<%= reClassify %>)</span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
         },
@@ -659,9 +657,7 @@
         convert2Html: function (formulaVo, template) {
             var defaultTemplate = '';
 
-            defaultTemplate += '<span class="formula formula_msheet">';
-            defaultTemplate += '    <%= reportCode %>!<%= position %>';
-            defaultTemplate += '</span>';
+            defaultTemplate += '<span class="formula formula_msheet"><%= reportCode %>!<%= position %></span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
         }
@@ -750,9 +746,7 @@
         convert2Html: function (formulaVo, template) {
             var defaultTemplate = '';
 
-            defaultTemplate += '<span class="formula formula_commonworld">';
-            defaultTemplate += '    <%= label %>';
-            defaultTemplate += '</span>';
+            defaultTemplate += '<span class="formula formula_commonworld"><%= label %></span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
         }
@@ -815,9 +809,7 @@
         convert2Html: function (formulaVo, template) {
             var defaultTemplate = '';
 
-            defaultTemplate += '<span class="formula formula_sheet">';
-            defaultTemplate += '    <%= position %>';
-            defaultTemplate += '</span>';
+            defaultTemplate += '<span class="formula formula_sheet"><%= position %></span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
         }
@@ -880,9 +872,7 @@
         convert2Html: function (formulaVo, template) {
             var defaultTemplate = '';
 
-            defaultTemplate += '<span class="formula formula_sum">';
-            defaultTemplate += '    SUM(<%= startPosition %>:<%= endPosition %>)';
-            defaultTemplate += '</span>';
+            defaultTemplate += '<span class="formula formula_sum">SUM(<%= startPosition %>:<%= endPosition %>)</span>';
             template || (template = defaultTemplate);
             return String(_.template(template, formulaVo));
         }

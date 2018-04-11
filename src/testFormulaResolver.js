@@ -286,41 +286,51 @@
 
     // 7.测试混合公式的渲染
     // 7.1 测试四则运算
-    var complexRenderTitle = "测试混合公式的渲染";
-    var complexRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
-    var complexRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula));
-    testFormulaRender(complexRenderTitle, complexRenderFormula, complexRenderResult);
+    var ifRenderTitle = "测试混合公式的渲染";
+    var ifRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
+    var ifRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula));
+    testFormulaRender(ifRenderTitle, ifRenderFormula, ifRenderResult);
 
     // 7.2测试if运算
-    var complexRenderTitle1 = "测试混合公式之IF的渲染";
-    var complexRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
-    var complexRenderResult1 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula1));
-    testFormulaRender(complexRenderTitle1, complexRenderFormula1, complexRenderResult1);
+    var ifRenderTitle1 = "测试混合公式之IF的渲染";
+    var ifRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
+    var ifRenderResult1 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula1));
+    testFormulaRender(ifRenderTitle1, ifRenderFormula1, ifRenderResult1);
 
-    var complexRenderTitle2 = "测试混合公式之IF的渲染";
-    var complexRenderFormula2 = "IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF";
-    var complexRenderResult2 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula2));
-    testFormulaRender(complexRenderTitle2, complexRenderFormula2, complexRenderResult2);
+    var ifRenderTitle2 = "测试混合公式之IF的渲染";
+    var ifRenderFormula2 = "IF#(<E14>*<E15>>0,<E14>*<E15>,0)#IF";
+    var ifRenderResult2 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula2));
+    testFormulaRender(ifRenderTitle2, ifRenderFormula2, ifRenderResult2);
 
-    var complexRenderTitle3 = "测试混合公式之IF的渲染";
-    var complexRenderFormula3 = "IF#(<E14>*<E15>>0,SUM(<C3>:<C13>), IF#(4 + 5 > 6, 1, 0)#IF)#IF";
-    var complexRenderResult3 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula3));
-    testFormulaRender(complexRenderTitle3, complexRenderFormula3, complexRenderResult3);
+    var ifRenderTitle3 = "测试混合公式之IF的渲染";
+    var ifRenderFormula3 = "IF#(<E14>*<E15>>0,SUM(<C3>:<C13>), IF#(4 + 5 > 6, 1, 0)#IF)#IF";
+    var ifRenderResult3 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula3));
+    testFormulaRender(ifRenderTitle3, ifRenderFormula3, ifRenderResult3);
 
-    var complexRenderTitle4 = "测试混合公式之IF的渲染";
-    var complexRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
-    var complexRenderResult4 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula4));
-    testFormulaRender(complexRenderTitle4, complexRenderFormula4, complexRenderResult4);
+    var ifRenderTitle4 = "测试混合公式之IF的渲染";
+    var ifRenderFormula4 = "IF#(1 + 2 > 3, 4, 5)#IF + IF#(6 + 7 > 8, 9, 10)#IF";
+    var ifRenderResult4 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula4));
+    testFormulaRender(ifRenderTitle4, ifRenderFormula4, ifRenderResult4);
 
-    var complexRenderTitle5 = "测试混合公式之IF的渲染";
-    var complexRenderFormula5 = "IF#(1 + 2 > 3, 4, [K1001,^S0^G20^Y:0^M:0^E0])#IF + IF#(6 + 7 > 8, 9, 10)#IF";
-    var complexRenderResult5 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula5));
-    testFormulaRender(complexRenderTitle5, complexRenderFormula5, complexRenderResult5);
+    var ifRenderTitle5 = "测试混合公式之IF的渲染";
+    var ifRenderFormula5 = "IF#(1 + 2 > 3, 4, [K1001,^S0^G20^Y:0^M:0^E0])#IF + IF#(6 + 7 > 8, 9, 10)#IF";
+    var ifRenderResult5 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula5));
+    testFormulaRender(ifRenderTitle5, ifRenderFormula5, ifRenderResult5);
 
-    var complexRenderTitle6 = "测试混合公式之IF的渲染";
-    var complexRenderFormula6 = "IF#(({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0,-({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>}),0.00)#IF";
-    var complexRenderResult6 = formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula6));
-    testFormulaRender(complexRenderTitle6, complexRenderFormula6, complexRenderResult6);
+    var ifRenderTitle6 = "测试混合公式之IF的渲染";
+    var ifRenderFormula6 = "IF#(({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0,-({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>}),0.00)#IF";
+    var ifRenderResult6 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula6));
+    testFormulaRender(ifRenderTitle6, ifRenderFormula6, ifRenderResult6);
+
+    var ifRenderTitle7 = "测试混合公式之IF的渲染";
+    var ifRenderFormula7 = "IF#(({11!<C10>}-{11!<D10>}+{12!<D13>}+{12!<D6>}+{12!<D5>}-{13_01!<C9>}+(<C30>-{12!<D7>})-({11!<C19>}-{11!<D19>})-({11!<C6>}+{11!<C10>})*0.005/0.995-{13_01!<C32>})>0,0.00,({11!<C10>}-{11!<D10>}+{12!<D13>}+{12!<D6>}+{12!<D5>}-{13_01!<C9>}+(<C30>-{12!<D7>})-({11!<C19>}-{11!<D19>})-({11!<C6>}+{11!<C10>})*0.005/0.995-{13_01!<C32>}))#IF";
+    var ifRenderResult7 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula7));
+    testFormulaRender(ifRenderTitle7, ifRenderFormula7, ifRenderResult7);
+
+    var ifRenderTitle8 = "测试混合公式之IF的渲染";
+    var ifRenderFormula8 = "IF#(({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0,-({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>}),0.00)#IF + IF#(({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0,-({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>}),0.00)#IF";
+    var ifRenderResult8 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula8));
+    testFormulaRender(ifRenderTitle8, ifRenderFormula8, ifRenderResult8);
 
     // 9 测试混合公式之表单单元格相加的渲染
     var complexRenderTitle7 = "测试混合公式之表单单元格相加的渲染";
@@ -329,7 +339,7 @@
     testFormulaRender(complexRenderTitle7, complexRenderFormula7, complexRenderResult7);
 
     // 9 测试混合公式之表单单元格相加的渲染
-    var complexRenderTitle8 = "测试混合公式之表单单元格相加的渲染";
+    var complexRenderTitle8 = "测试混合公式之表间单元格相加的渲染";
     var complexRenderFormula8 = "({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0";
     var complexRenderResult8= formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula8));
     testFormulaRender(complexRenderTitle8, complexRenderFormula8, complexRenderResult8);
