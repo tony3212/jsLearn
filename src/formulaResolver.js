@@ -883,7 +883,7 @@
      * @implements {ISymbolResolver}
      */
     var ifResolver = $.extend(true, {}, ISymbolResolver, {
-        resolveVoField: ["condition", "trueValue", "falseValue"],
+        childrenField: ["condition", "trueValue", "falseValue"],
 
         getRegex: function () {
             // (?:(?:[^(),]+)匹配没有括号也没有逗号的字符串
@@ -905,10 +905,19 @@
         /**
          * 将基本公式转成vo对象
          * @param formula 基本公式
+         * @param childArray
          * @returns {Object}
          */
-        convert2Vo: function (formula) {
+        convert2Vo: function (formula, childArray) {
             var self = this, matchResult;
+
+            if ($.isArray(childArray)) {
+                return  {
+                    condition: childArray[0],
+                    trueValue: childArray[1],
+                    falseValue: childArray[2]
+                };
+            }
 
             if (!self.isValidateFormula(formula)) {
                 return null;
@@ -917,7 +926,7 @@
             matchResult = self.getRegex().exec(formula);
             return matchResult != null
                 ? {
-                    condition: $.trim(matchResult[1]),
+                    condition: childArray[0],
                     trueValue: $.trim(matchResult[2]),
                     falseValue: $.trim(matchResult[3])
                 }
@@ -1122,6 +1131,63 @@
             }
 
             return treeNode;
+        },
+
+        /**
+         * 更新公式节点
+         * @private
+         */
+        _updateFormulaNodeByResolvingSymbolInfo: function (resolvingSymbolInfo, formula) {
+            var self = this, symbol = resolvingSymbolInfo.symbol, symbolName, symbolValue, splitStrArray = [],
+                resolver, symbolFormula, formulaNode, formulaVo, lastChild, grandChildren;
+
+            if (_.size(resolvingSymbolInfo.transitArray) === 0) {
+                return;
+            }
+
+            symbolName = self._getSymbolName(symbol);
+            symbolValue = self._getSymbolValue(symbol);
+            symbolFormula = formula.substring(
+                resolvingSymbolInfo.starterIndex - symbolValue.STARTER.length + 1,
+                resolvingSymbolInfo.terminatorIndex + 1
+            );
+
+            var tempIndex = resolvingSymbolInfo.starterIndex + 1;
+            $.each(resolvingSymbolInfo.transitArray, function (i, transitIndex) {
+                splitStrArray.push(formula.substring(tempIndex, transitIndex));
+                tempIndex = transitIndex + 1;
+            });
+            splitStrArray.push(formula.substring(
+                tempIndex,
+                resolvingSymbolInfo.terminatorIndex - symbolValue.TERMINATOR.length + 1)
+            );
+            resolver = self._getSymbolResolver(symbolName);
+            Logger.trace("update formulaVo, formula:" + symbolFormula + ",splitStrArray:" + splitStrArray);
+            formulaNode = resolvingSymbolInfo.formulaNode;
+            formulaVo = formulaNode.formulaVo;
+            // 更新公式vo
+            if (resolver && resolver.convert2Vo) {
+                if (formulaNode.formulaVo) {
+                    $.extend(formulaVo, resolver.convert2Vo(symbolFormula, splitStrArray));
+                } else {
+                    formulaVo = resolver.convert2Vo(symbolFormula, splitStrArray)
+                }
+            }
+            //
+            lastChild = resolvingSymbolInfo.formulaNode.children;
+            if (_.size(lastChild) > 0) {
+                resolvingSymbolInfo.transitChildren.push(lastChild);
+                resolvingSymbolInfo.formulaNode.children = [];
+            }
+
+            grandChildren = resolvingSymbolInfo.transitChildren;
+            $.each(resolver.childrenField, function (index, field) {
+                var childNode;
+
+                childNode = self._createNotLeafFormulaNode(symbol, field, formulaVo);
+                self._setFormulaChildren(childNode, grandChildren[index]);
+                self._addFormulaChild(formulaNode, childNode);
+            });
         }
     });
 //</editor-fold>
@@ -1187,6 +1253,8 @@
             IF: {
                 STARTER: "IF#(",
                 TERMINATOR: ")#IF",
+                // 中间过渡符号
+                TRANSIT: ",",
                 LEAF: false
             },
 
@@ -1451,7 +1519,7 @@
          */
         mappingSymbol: function (matchingText, resolvingSymbolArray, formula) {
             var self = this, starterArray,
-                symbol, symbolName, regMatch, resolvingText, resolver, mappingItem = null;
+                symbol, symbolName, symbolValue, regMatch, resolvingText, resolver, mappingItem = null;
 
             starterArray = self._findSymbolArray(matchingText, function (symbol) {
                 return String(symbol.beforeContext).length;
@@ -1463,13 +1531,14 @@
 
             $.each(starterArray, function (index, searchMapping) {
                 symbol = searchMapping.symbol;
-                symbolName = self._getSymbolName(searchMapping.symbol);
+                symbolName = self._getSymbolName(symbol);
+                symbolValue = self._getSymbolValue(symbol);
 
                 mappingItem = {symbol: symbol};
                 // 如果是最基础的公式
                 resolvingText = formula.substr(searchMapping.beforeContext.length);
                 resolver = self._getSymbolResolver(symbolName);
-                if (resolver) {
+                if (resolver && symbolValue.LEAF) {
                     // 根据字符串找出公式
                     regMatch = resolver.getRegex().exec(resolvingText);
                     if (regMatch && regMatch.index === 0) {
@@ -1512,6 +1581,38 @@
             symbol = lastResolvingSymbolInfo.symbol;
             symbolValue = self._getSymbolValue(symbol);
             index = String(matchingText).indexOf(symbolValue.TERMINATOR);
+
+            if (index >= 0) {
+                beforeContext = String(matchingText).substring(0, index);
+                mappingItem = {
+                    symbol: symbol,
+                    beforeContext: beforeContext,
+                    resolvingSymbolInfo: lastResolvingSymbolInfo,
+                    matchContext: matchingText.substr(beforeContext.length)
+                };
+            }
+
+            return mappingItem;
+        },
+
+        /**
+         * 匹配公式元素结束符
+         * @param matchingText
+         * @param resolvingSymbolArray
+         * @returns {*}
+         */
+        mappingTransitSymbol: function (matchingText, resolvingSymbolArray/*, formula*/) {
+            var self = this, lastResolvingSymbolInfo,
+                symbol, symbolValue, index, beforeContext, mappingItem = null;
+
+            if (_.size(resolvingSymbolArray) === 0) {
+                return null;
+            }
+
+            lastResolvingSymbolInfo = _.last(resolvingSymbolArray);
+            symbol = lastResolvingSymbolInfo.symbol;
+            symbolValue = self._getSymbolValue(symbol);
+            index = String(matchingText).indexOf(symbolValue.TRANSIT);
 
             if (index >= 0) {
                 beforeContext = String(matchingText).substring(0, index);
@@ -1574,11 +1675,10 @@
          * @returns {[FormulaNode]} 公式节点树
          */
         resolve: function (formula) {
-            var self = this, resolvingSymbolArray = [], formulaTree = [], matchingText = "",
-                resolver, formulaVo,
+            var self = this, resolvingSymbolArray = [], formulaTree = [], matchingText = "", resolver,
                 mappingSymbolResult, mappingFormula,
                 mappingLogicResult, logic, logicName, logicValue,
-                notLeafSymbolResult;
+                notLeafSymbolResult, transitSymbolResult, resolvingSymbolInfo;
 
             Logger.separate("");
             Logger.caption("formula is: " + formula);
@@ -1647,28 +1747,22 @@
                     }
 
                     resolver = self._getSymbolResolver(symbolName);
-                    if (resolver == null || _.size(resolver.resolveVoField) === 0) {
+                    if (resolver == null || !resolver.LEAF) {
                         resolvingSymbolArray.push({
                             symbol: symbol,
                             symbolName: symbolName,
                             parentFormulaNode: parentNode,
                             formulaNode: formulaNode,
-                            formula: mappingFormula
+                            formula: mappingFormula,
+                            starterIndex: i,
+                            transitArray: [],
+                            transitChildren: []
                         });
                         // 2.5处理控置变量
                         matchingText = "";
                         lastResolvingIndex = i;
                         continue;
                     } else {
-                        formulaVo = formulaNode.formulaVo;
-                        $.each(resolver.resolveVoField, function (index, field) {
-                            var childNode, grandChildren;
-
-                            childNode = self._createNotLeafFormulaNode(symbol, field, formulaVo);
-                            grandChildren = self.resolve(formulaVo[field]);
-                            self._setFormulaChildren(childNode, grandChildren);
-                            self._addFormulaChild(formulaNode, childNode);
-                        });
                         // 2.5处理控置变量
                         matchingText = "";
                         i += mappingFormula.length - matchContext.length;
@@ -1713,6 +1807,7 @@
                 // 4.处理非叶子基础公式
                 notLeafSymbolResult = self.mappingNotLeafSymbol(matchingText, resolvingSymbolArray);
                 if (notLeafSymbolResult) {
+                    resolvingSymbolInfo = notLeafSymbolResult.resolvingSymbolInfo;
                     beforeContext = notLeafSymbolResult.beforeContext;
 
                     if (beforeContext) {
@@ -1720,7 +1815,29 @@
                         emptyTextNode = $.trim(beforeContext) !== "" ? self._createTextFormulaNode(beforeContext) : null;
                         self._addFormulaNode(emptyTextNode, parentNode, formulaTree);
                     }
+                    resolvingSymbolInfo.terminatorIndex = i;
+                    self._updateFormulaNodeByResolvingSymbolInfo(resolvingSymbolInfo, formula);
                     resolvingSymbolArray.pop();
+                    matchingText = "";
+                    lastResolvingIndex = i;
+                    continue;
+                }
+
+                // 5.匹配可以含有子节点的symbol的中间符号，例如IF#(A,B,C)#IF中间的逗号
+                transitSymbolResult = self.mappingTransitSymbol(matchingText, resolvingSymbolArray);
+                if (transitSymbolResult) {
+                    beforeContext = transitSymbolResult.beforeContext;
+                    resolvingSymbolInfo = transitSymbolResult.resolvingSymbolInfo;
+
+                    if (beforeContext) {
+                        parentNode = resolvingSymbolInfo.formulaNode;
+                        emptyTextNode = $.trim(beforeContext) !== "" ? self._createTextFormulaNode(beforeContext) : null;
+                        self._addFormulaNode(emptyTextNode, parentNode, formulaTree);
+                    }
+
+                    resolvingSymbolInfo.transitArray.push(i);
+                    resolvingSymbolInfo.transitChildren.push(resolvingSymbolInfo.formulaNode.children);
+                    resolvingSymbolInfo.formulaNode.children = [];
                     matchingText = "";
                     lastResolvingIndex = i;
                 }

@@ -1,3 +1,11 @@
-const field = 'dynamicRandom';
-const price = 5.99;
-const quantity = 2;
+let names = ['matt', 'smith', 'jack'];
+
+for (let name of names) {
+    console.log(name);
+}
+
+
+let str = null;
+for(let c of str) {
+    console.log(c);
+}

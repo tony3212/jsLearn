@@ -4,7 +4,7 @@
     var R = formulaResolver;
     var Logger = formulaResolver.Logger;
 
-    Logger.level = 4;
+    Logger.level = 3;
     Logger.$logBox = $("#main");
 
     //<editor-fold desc="测试解析器">
@@ -215,6 +215,7 @@
      formulaResolver.resolve("(1+2)");
      //</editor-fold>
      //<editor-fold desc="2.测试组和公式">
+
      // 2.1.测试【会计科目】+【表间取值】+【常用字(其它)】
      Logger.info("2.1.测试【会计科目】+【表间取值】+【常用字(其它)】");
      formulaResolver.resolve("[K1001,(1001,)^S1^G41^Y:0^M:0^E0] + {11!<C3>} + #corpName#+#registAddress#");
@@ -222,8 +223,8 @@
      // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
      // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
+*/
 
- */
     //</editor-fold>
 
     //<editor-fold desc="测试渲染文本">
@@ -247,7 +248,7 @@
         })));
     }
 
-    /**/
+    /*
     // 1.测试【普通文本】渲染
     var textRenderTitle = "测试【普通文本】渲染";
     var textRenderFormula = "abc";
@@ -290,7 +291,7 @@
     var ifRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
     var ifRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula));
     testFormulaRender(ifRenderTitle, ifRenderFormula, ifRenderResult);
-
+*/
     // 7.2测试if运算
     var ifRenderTitle1 = "测试混合公式之IF的渲染";
     var ifRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
@@ -343,10 +344,21 @@
     var complexRenderFormula8 = "({10!<C4>}-{10!<D4>}+{10!<C16>}-{10!<D16>}+{10!<C17>}-{10!<D17>})<0";
     var complexRenderResult8= formulaResolver.renderHtml(formulaResolver.resolve(complexRenderFormula8));
     testFormulaRender(complexRenderTitle8, complexRenderFormula8, complexRenderResult8);
-
     //</editor-fold>
 
 //     Logger.info(JSON.stringify(formulaResolver._findSymbolArray("IF#"), null, null));
 //     formulaResolver.resolve("1 + 2 > 0");
+
+    //临时测试
+    Logger.info(" 1.8.测试 【组(Group)】公式");
+    var groupTitle = "1.8.测试 【组(Group)】公式";
+    var groupFormula = "(1+2)";
+    var groupResult = formulaResolver.renderHtml(formulaResolver.resolve(groupFormula));
+    testFormulaRender(groupTitle, groupFormula, groupResult);
+
+//     var ifRenderTitle1 = "测试混合公式之IF的渲染";
+//     var ifRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
+//     var ifRenderResult1 = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula1));
+//     testFormulaRender(ifRenderTitle1, ifRenderFormula1, ifRenderResult1);
 
 })(formulaResolver, $, _);
