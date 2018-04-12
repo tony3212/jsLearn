@@ -1939,6 +1939,11 @@
                 self._addFormulaNode(self._createTextFormulaNode(formula.substr(lastResolvingIndex + 1)), null, formulaTree);
             }
 
+            // 如果解析数组中还有值，说明缺少结束符，公式错误，
+            if (_.size(resolvingSymbolArray) > 0) {
+                Logger.error("公式有误：" + JSON.stringify(resolvingSymbolArray));
+            }
+
             Logger.warn("formula tree is: " + JSON.stringify(formulaTree, null, "\t"));
             return formulaTree;
         },
