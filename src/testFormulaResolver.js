@@ -178,7 +178,6 @@
     //</editor-fold>
 
     //<editor-fold desc="1.测试单个公式">
-    /*
      Logger.separate();
      Logger.caption("测试解析树");
      // 1.1.测试普通文本
@@ -223,7 +222,6 @@
      // 2.2.测试(【会计科目】+【表间取值】) +【常用字(其它)】
 
      // 2.3.测试(【会计科目】+【表间取值】) / (【会计科目】 - 【表间取值】) * 2.5
-*/
 
     //</editor-fold>
 
@@ -248,50 +246,6 @@
         })));
     }
 
-    /*
-    // 1.测试【普通文本】渲染
-    var textRenderTitle = "测试【普通文本】渲染";
-    var textRenderFormula = "abc";
-    var textRenderResult = R.textResolver.convert2Html(R.textResolver.convert2Vo(textRenderFormula));
-    testFormulaRender(textRenderTitle, textRenderFormula, textRenderResult);
-
-    // 2.测试【会计科目】渲染
-    var subjectRenderTitle = "测试【会计科目】渲染";
-    var subjectRenderFormula = "[K100101,^S1^G20^Y:0^M:0^E0]";
-    var subjectRenderResult = R.subjectResolver.convert2Html(R.subjectResolver.convert2Vo(subjectRenderFormula));
-    testFormulaRender(subjectRenderTitle, subjectRenderFormula, subjectRenderResult);
-
-    // 3.测试【表间取值】渲染
-    var mSheetRenderTitle = "测试【表间取值】渲染";
-    var mSheetRenderFormula = "{FSTM_JS0102!<B3>}";
-    var mSheetRenderResult = R.mSheetResolver.convert2Html(R.mSheetResolver.convert2Vo(mSheetRenderFormula));
-    testFormulaRender(mSheetRenderTitle, mSheetRenderFormula, mSheetRenderResult);
-
-    // 4.测试【常用字(其它)】渲染
-    var commonWorldRenderTitle = "测试【常用字(其它)】渲染";
-    var commonWorldRenderFormula = "#queryTIN#";
-    var commonWorldRenderResult = R.commonWorldResolver.convert2Html(R.commonWorldResolver.convert2Vo(commonWorldRenderFormula));
-    testFormulaRender(commonWorldRenderTitle, commonWorldRenderFormula, commonWorldRenderResult);
-
-    // 5.测试【单元格】渲染
-    var sheetRenderTitle = "测试【单元格】渲染";
-    var sheetRenderFormula = "<C3>";
-    var sheetRenderResult = R.sheetResolver.convert2Html(R.sheetResolver.convert2Vo(sheetRenderFormula));
-    testFormulaRender(sheetRenderTitle, sheetRenderFormula, sheetRenderResult);
-
-    // 6.测试【求和(SUM)】渲染
-    var sumRenderTitle = "测试【求和(SUM)】渲染";
-    var sumRenderFormula = "SUM(<C1>:<C2>)";
-    var sumRenderResult = R.sumResolver.convert2Html(R.sumResolver.convert2Vo(sumRenderFormula));
-    testFormulaRender(sumRenderTitle, sumRenderFormula, sumRenderResult);
-
-    // 7.测试混合公式的渲染
-    // 7.1 测试四则运算
-    var ifRenderTitle = "测试混合公式的渲染";
-    var ifRenderFormula = "[K1001,^S0^G20^Y:0^M:0^E0] - ({11_01!<C3>}) + #corpName# + SUM(<C1>:<C2>)";
-    var ifRenderResult = formulaResolver.renderHtml(formulaResolver.resolve(ifRenderFormula));
-    testFormulaRender(ifRenderTitle, ifRenderFormula, ifRenderResult);
-*/
     // 7.2测试if运算
     var ifRenderTitle1 = "测试混合公式之IF的渲染";
     var ifRenderFormula1 = "IF#(1 + 2 > 3, 4, 5)#IF";
